@@ -20,9 +20,12 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
-      setError(authError.message === 'Invalid login credentials'
-        ? 'Email hoặc mật khẩu không chính xác.'
-        : authError.message);
+      const msg = authError.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản.';
+      setError(
+        msg === 'Invalid login credentials' || msg === '{}'
+          ? 'Email hoặc mật khẩu không chính xác.'
+          : msg
+      );
       setLoading(false);
     } else {
       window.location.href = '/';

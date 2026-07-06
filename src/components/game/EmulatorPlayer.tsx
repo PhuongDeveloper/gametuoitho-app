@@ -5,9 +5,10 @@ import type { Game } from '@/types/database';
 
 interface EmulatorPlayerProps {
   game: Game;
+  engine?: string;
 }
 
-export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
+export default function EmulatorPlayer({ game, engine = 'freej2me' }: EmulatorPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isJar =
@@ -34,9 +35,29 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
     (window as any).EJS_core = 'gba';
     (window as any).EJS_gameUrl = game.file_url;
     (window as any).EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    (window as any).EJS_color = '#dc2626'; // Red theme
+    (window as any).EJS_color = '#ff4757'; // Vibrant red
     (window as any).EJS_startOnLoaded = true;
     (window as any).EJS_oldCores = false;
+
+    // Force hide default EmulatorJS bottom button bar and controls
+    (window as any).EJS_hideButtonBar = true;
+    (window as any).EJS_hideControls = true;
+    (window as any).EJS_Buttons = {
+      playPause: false,
+      restart: false,
+      mute: false,
+      settings: false,
+      fullscreen: false,
+      saveState: false,
+      loadState: false,
+      screenRecord: false,
+      gamepad: false,
+      cheat: false,
+      volume: false,
+      saveSavFiles: false,
+      loadSavFiles: false,
+      fastForward: false,
+    };
 
     // Load EmulatorJS script
     const script = document.createElement('script');
@@ -46,37 +67,60 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
   };
 
   if (isJar) {
-    // J2ME games use iframe embed
+    // J2ME games use iframe embed with stable CheerpJ / FreeJ2ME / J2ME.js ports
+    const jarUrl = encodeURIComponent(game.file_url);
+    const iframeSrc =
+      engine === 'j2mejs'
+        ? `https://ta1902.github.io/j2me.js/?url=${jarUrl}`
+        : `https://zb3.github.io/freej2me-web/?url=${jarUrl}`;
+
     return (
-      <div className="emulator-container w-full">
-        <div className="relative w-full" style={{ paddingBottom: '75%' }}>
+      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden">
+        <div className="relative w-full" style={{ paddingBottom: '65%', minHeight: '420px' }}>
           <iframe
-            src={`https://nickeys.github.io/nicj2me/?jar=${encodeURIComponent(game.file_url)}`}
-            className="absolute inset-0 w-full h-full border-0 rounded-2xl"
-            allow="gamepad; autoplay"
+            src={iframeSrc}
+            className="absolute inset-0 w-full h-full border-0 bg-black"
+            allow="gamepad; autoplay; fullscreen"
             title={`Play ${game.title}`}
           />
         </div>
-        <div className="bg-[#231f20] text-[#f8f6ed] p-3 rounded-b-2xl text-center text-xs font-bold mt-2 border-2 border-[#231f20]">
-          <p>Bấm vào game rồi dùng bàn phím để chơi. Phím mũi tên = Di chuyển, Enter = OK, Backspace = Back</p>
+        <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold border-t border-white/10">
+          <p>💡 Mẹo: Nhấn nút hoặc dùng bàn phím số (1-9, Enter = Fire, Q/W = Phím mềm) để chơi game Java!</p>
         </div>
       </div>
     );
   }
 
-  // GBA EmulatorJS
+  // GBA EmulatorJS with custom CSS to hide any residual default bars
   return (
-    <div className="emulator-container w-full">
+    <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden relative">
+      <style jsx global>{`
+        /* Hide default EmulatorJS control bar if EJS_hideButtonBar fails in some versions */
+        #emulator-game .ejs--control-bar,
+        #emulator-game .ejs--controls,
+        #emulator-game .ejs--bottom-bar,
+        #emulator-game > div:nth-child(2) {
+          display: none !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          height: 0 !important;
+        }
+        #emulator-game canvas {
+          width: 100% !important;
+          height: auto !important;
+          max-height: 70vh !important;
+          margin: 0 auto !important;
+          display: block !important;
+        }
+      `}</style>
       <div
         id="emulator-game"
         ref={containerRef}
-        className="w-full rounded-2xl overflow-hidden"
-        style={{ minHeight: '400px', maxHeight: '600px' }}
+        className="w-full overflow-hidden flex items-center justify-center bg-black"
+        style={{ minHeight: '420px', maxHeight: '70vh' }}
       />
-      <div className="bg-[#231f20] text-[#f8f6ed] p-3 rounded-b-2xl text-center text-xs font-bold mt-2 border-2 border-[#231f20]">
-        <p>
-          Bấm vào màn hình game để bắt đầu. Dùng bàn phím hoặc tay cầm Gamepad để điều khiển.
-        </p>
+      <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold border-t border-white/10">
+        <p>💡 Mẹo: Dùng thanh công cụ GameTuoiTho phía dưới để Lưu/Tải Game hoặc đổi phím điều khiển!</p>
       </div>
     </div>
   );

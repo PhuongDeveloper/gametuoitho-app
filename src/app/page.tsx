@@ -15,44 +15,36 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const supabase = await createClient();
 
-  // Fetch dynamic categories/genres safely
-  const { data: rawCategories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name', { ascending: true });
-  const categories: Category[] = rawCategories || [];
-
-  // Fetch games safely
-  let query = supabase.from('games').select('*').order('created_at', { ascending: false });
+  // Build filtered query for main games grid
+  let gamesQuery = supabase.from('games').select('*').order('created_at', { ascending: false });
 
   if (params.category === 'VIP') {
-    query = query.eq('is_vip_only', true);
+    gamesQuery = gamesQuery.eq('is_vip_only', true);
   } else if (params.category && params.category !== 'ALL') {
     // Filter by genre category slug
-    query = query.eq('category', params.category);
+    gamesQuery = gamesQuery.eq('category', params.category);
   }
 
   if (params.search) {
-    query = query.ilike('title', `%${params.search}%`);
+    gamesQuery = gamesQuery.ilike('title', `%${params.search}%`);
   }
 
-  const { data: rawGames } = await query;
+  // Fetch all queries in parallel to drastically improve page transition fluidity
+  const [
+    { data: rawCategories },
+    { data: rawGames },
+    { data: rawTopGames },
+    { data: rawNewGames },
+  ] = await Promise.all([
+    supabase.from('categories').select('*').order('name', { ascending: true }),
+    gamesQuery,
+    supabase.from('games').select('*').order('total_plays', { ascending: false }).limit(10),
+    supabase.from('games').select('*').order('created_at', { ascending: false }).limit(10),
+  ]);
+
+  const categories: Category[] = rawCategories || [];
   const games: Game[] = rawGames || [];
-
-  // Fetch top games for carousel safely
-  const { data: rawTopGames } = await supabase
-    .from('games')
-    .select('*')
-    .order('total_plays', { ascending: false })
-    .limit(10);
   const topGames: Game[] = rawTopGames || [];
-
-  // Fetch newest games safely
-  const { data: rawNewGames } = await supabase
-    .from('games')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(10);
   const newGames: Game[] = rawNewGames || [];
 
   const activeCategory = params.category || 'ALL';
