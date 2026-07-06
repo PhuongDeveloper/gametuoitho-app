@@ -17,7 +17,6 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
   const [user, setUser] = useState<Profile | null>(null);
   const [canPlay, setCanPlay] = useState(false);
   const [startTime, setStartTime] = useState<number>(0);
-  const [engine, setEngine] = useState<string>('freej2me');
   const [isGamepadVisible, setIsGamepadVisible] = useState<boolean>(false);
   const supabase = createClient();
 
@@ -30,7 +29,7 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
       : 'GBA';
 
   useEffect(() => {
-    // Auto-detect mobile/touch devices to enable gamepad by default
+    // Auto-detect mobile/touch devices to enable gamepad by default for both GBA & JAR
     if (typeof window !== 'undefined') {
       const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
       if (isTouch) {
@@ -60,7 +59,7 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
         }
       }
     };
-  }, [supabase, game.id, game.is_vip_only, startTime, user]);
+  }, [supabase, game.id, game.is_vip_only, startTime, user, platform]);
 
   if (game.is_vip_only && !canPlay) {
     return (
@@ -87,13 +86,11 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
     <div className="space-y-6">
       {/* Emulator & Custom Controls Box */}
       <div className="cartoon-container bg-[#1a1a1a] p-3 sm:p-4 rounded-3xl shadow-[10px_10px_0px_#231f20] border-[3px] border-[#231f20] space-y-4">
-        <EmulatorPlayer game={game} engine={engine} />
+        <EmulatorPlayer game={game} />
         
         <GameControlBar
           slug={game.slug}
           platform={platform}
-          engine={engine}
-          onEngineChange={(newEngine) => setEngine(newEngine)}
           onToggleGamepad={() => setIsGamepadVisible(!isGamepadVisible)}
           isGamepadVisible={isGamepadVisible}
         />

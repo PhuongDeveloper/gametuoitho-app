@@ -112,7 +112,7 @@ export default function KeyConfigModal({ platform, isOpen, onClose, onSaved }: K
         {/* Header */}
         <div className="bg-[#ff4757] border-b-[3px] border-[#231f20] p-5 flex justify-between items-center text-white">
           <h3 className="font-black text-lg uppercase tracking-wide flex items-center gap-2">
-            ⚙️ Cấu Hình Nút Bấm ({platform})
+            Cấu Hình Nút Bấm ({platform})
           </h3>
           <button
             onClick={onClose}

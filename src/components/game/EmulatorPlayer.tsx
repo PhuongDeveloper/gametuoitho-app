@@ -5,10 +5,9 @@ import type { Game } from '@/types/database';
 
 interface EmulatorPlayerProps {
   game: Game;
-  engine?: string;
 }
 
-export default function EmulatorPlayer({ game, engine = 'freej2me' }: EmulatorPlayerProps) {
+export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isJar =
@@ -67,25 +66,36 @@ export default function EmulatorPlayer({ game, engine = 'freej2me' }: EmulatorPl
   };
 
   if (isJar) {
-    // J2ME games use iframe embed with stable CheerpJ / FreeJ2ME / J2ME.js ports
-    const jarUrl = encodeURIComponent(game.file_url);
-    const iframeSrc =
-      engine === 'j2mejs'
-        ? `https://ta1902.github.io/j2me.js/?url=${jarUrl}`
-        : `https://zb3.github.io/freej2me-web/?url=${jarUrl}`;
-
+    // J2ME games use stable FreeJ2ME CheerpJ Web port hosted locally (same-origin) with auto URL boot
     return (
-      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden">
-        <div className="relative w-full" style={{ paddingBottom: '65%', minHeight: '420px' }}>
+      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-3 sm:p-4">
+        {/* Helper instructions for CheerpJ FreeJ2ME */}
+        <div className="bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="text-xs sm:text-sm font-bold space-y-1 text-left">
+            <p className="font-black text-[#ff4757] uppercase text-sm">
+              Trình giả lập Java J2ME tự động nạp game:
+            </p>
+            <p>Trò chơi đang được tự động tải và nạp vào bộ nhớ trình giả lập. Bạn không cần chọn file thủ công.</p>
+            <p>Sử dụng bàn phím vật lý hoặc bấm nút <span className="font-black underline">Hiện Tay Cầm Ảo</span> phía dưới để điều khiển.</p>
+          </div>
+          <a
+            href={game.file_url}
+            download={`${game.title || 'game'}.jar`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-5 py-3 bg-[#ff4757] hover:bg-[#ff2e43] text-white font-black text-xs sm:text-sm rounded-xl border-[3px] border-[#231f20] shadow-[3px_3px_0px_#231f20] active:translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2 uppercase tracking-wide"
+          >
+            <span>Tải File Game .JAR</span>
+          </a>
+        </div>
+
+        <div className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20]" style={{ paddingBottom: '65%', minHeight: '480px' }}>
           <iframe
-            src={iframeSrc}
+            src={`/freej2me/web/run.html?url=${encodeURIComponent(game.file_url)}`}
             className="absolute inset-0 w-full h-full border-0 bg-black"
             allow="gamepad; autoplay; fullscreen"
             title={`Play ${game.title}`}
           />
-        </div>
-        <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold border-t border-white/10">
-          <p>💡 Mẹo: Nhấn nút hoặc dùng bàn phím số (1-9, Enter = Fire, Q/W = Phím mềm) để chơi game Java!</p>
         </div>
       </div>
     );
@@ -120,7 +130,7 @@ export default function EmulatorPlayer({ game, engine = 'freej2me' }: EmulatorPl
         style={{ minHeight: '420px', maxHeight: '70vh' }}
       />
       <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold border-t border-white/10">
-        <p>💡 Mẹo: Dùng thanh công cụ GameTuoiTho phía dưới để Lưu/Tải Game hoặc đổi phím điều khiển!</p>
+        <p>Mẹo: Dùng thanh công cụ phía dưới để Lưu/Tải Game hoặc đổi phím điều khiển!</p>
       </div>
     </div>
   );

@@ -6,8 +6,6 @@ import KeyConfigModal from './KeyConfigModal';
 interface GameControlBarProps {
   slug: string;
   platform: 'GBA' | 'JAR';
-  engine?: string;
-  onEngineChange?: (engine: string) => void;
   onToggleGamepad: () => void;
   isGamepadVisible: boolean;
 }
@@ -15,8 +13,6 @@ interface GameControlBarProps {
 export default function GameControlBar({
   slug,
   platform,
-  engine = 'freej2me',
-  onEngineChange,
   onToggleGamepad,
   isGamepadVisible,
 }: GameControlBarProps) {
@@ -123,7 +119,7 @@ export default function GameControlBar({
       {/* Control Toolbar */}
       <div className="bg-[#231f20] border-[3px] border-[#231f20] rounded-b-2xl p-3 px-4 sm:px-6 shadow-[6px_6px_0px_#231f20] flex flex-wrap items-center justify-between gap-3 text-white">
         
-        {/* Left: Save/Load State (GBA Only) or Engine Switcher (JAR) */}
+        {/* Left: Save/Load State (GBA Only) or Engine Label (JAR) */}
         <div className="flex items-center gap-2 flex-wrap">
           {platform === 'GBA' ? (
             <>
@@ -131,41 +127,26 @@ export default function GameControlBar({
                 onClick={handleSaveState}
                 className="px-4 py-2 bg-[#2ed573] hover:bg-[#26af5f] text-white rounded-xl font-black text-xs uppercase tracking-wide border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1.5"
               >
-                <span>💾 Lưu Game</span>
+                <span>Lưu Game</span>
               </button>
               <button
                 onClick={handleLoadState}
                 className="px-4 py-2 bg-[#ffa502] hover:bg-[#e59400] text-white rounded-xl font-black text-xs uppercase tracking-wide border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1.5"
               >
-                <span>📂 Tải Game</span>
+                <span>Tải Game</span>
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/20">
-              <span className="text-xs font-bold text-gray-300 px-2">Engine:</span>
-              <button
-                onClick={() => onEngineChange && onEngineChange('freej2me')}
-                className={`px-3 py-1 rounded-lg font-black text-xs transition-all ${
-                  engine === 'freej2me' ? 'bg-[#ff4757] text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                FreeJ2ME
-              </button>
-              <button
-                onClick={() => onEngineChange && onEngineChange('j2mejs')}
-                className={`px-3 py-1 rounded-lg font-black text-xs transition-all ${
-                  engine === 'j2mejs' ? 'bg-[#ff4757] text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                J2ME.js
-              </button>
+            <div className="flex items-center gap-2 bg-black/40 p-1.5 px-3 rounded-xl border border-white/20">
+              <span className="text-xs font-black text-[#ff4757]">Giả Lập Java:</span>
+              <span className="text-xs font-bold text-gray-200">FreeJ2ME Web (CheerpJ)</span>
             </div>
           )}
         </div>
 
         {/* Center: Volume Slider */}
         <div className="hidden sm:flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-xl border border-white/10">
-          <span className="text-xs">🔊</span>
+          <span className="text-xs font-black text-gray-300">Âm Lượng:</span>
           <input
             type="range"
             min="0"
@@ -183,7 +164,7 @@ export default function GameControlBar({
             onClick={() => setIsConfigOpen(true)}
             className="px-3.5 py-2 bg-[#3742fa] hover:bg-[#2f35ca] text-white rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1"
           >
-            <span>⚙️ Đổi Phím</span>
+            <span>Đổi Phím</span>
           </button>
           
           <button
@@ -192,15 +173,15 @@ export default function GameControlBar({
               isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
             }`}
           >
-            <span>🕹️ Nút Ảo: {isGamepadVisible ? 'Bật' : 'Tắt'}</span>
+            <span>Nút Ảo: {isGamepadVisible ? 'Bật' : 'Tắt'}</span>
           </button>
 
           <button
             onClick={handleFullscreen}
-            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all"
+            className="px-3.5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all"
             title="Toàn Màn Hình"
           >
-            🔲
+            <span>Toàn Màn Hình</span>
           </button>
         </div>
 
