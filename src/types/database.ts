@@ -11,16 +11,24 @@ export interface Profile {
   created_at: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
 export interface Game {
   id: string;
   title: string;
   slug: string;
-  category: 'GBA' | 'JAR';
+  category: string; // Slug of category/genre (e.g., 'hanh-dong', 'phieu-luu', 'nhap-vai')
+  platform?: 'GBA' | 'JAR'; // Platform type for emulator (GBA or Java J2ME)
   thumbnail_url: string | null;
   file_url: string;
   is_vip_only: boolean;
   release_year: number | null;
-  genre: string | null;
+  genre: string | null; // Readable name of category/genre (e.g., 'Hành Động', 'Phiêu Lưu')
   total_plays: number;
   rating: number;
   description: string | null;
@@ -57,6 +65,14 @@ export interface Database {
         Insert: Omit<Profile, 'created_at'> & { created_at?: string };
         Update: Partial<Omit<Profile, 'id'>>;
       };
+      categories: {
+        Row: Category;
+        Insert: Omit<Category, 'id' | 'created_at'> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Omit<Category, 'id'>>;
+      };
       games: {
         Row: Game;
         Insert: Omit<Game, 'id' | 'created_at' | 'total_plays' | 'rating'> & {
@@ -64,6 +80,7 @@ export interface Database {
           created_at?: string;
           total_plays?: number;
           rating?: number;
+          platform?: 'GBA' | 'JAR';
         };
         Update: Partial<Omit<Game, 'id'>>;
       };
