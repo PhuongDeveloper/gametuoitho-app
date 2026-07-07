@@ -13,6 +13,78 @@ import jsReferenceNatives from "../libjs/libjsreference.js";
 import mediaBridgeNatives from "../libjs/libmediabridge.js";
 import midiBridgeNatives from "../libjs/libmidibridge.js";
 
+// [Global Cache Resilience Patch] Prevents net::ERR_CACHE_OPERATION_NOT_SUPPORTED crashes in Edge/Chrome/Safari
+(function() {
+    if (typeof window === 'undefined') return;
+    if (window.fetch && !window._cheerpjCachePatched) {
+        window._cheerpjCachePatched = true;
+        const origFetch = window.fetch;
+        window.fetch = async function(resource, init) {
+            let opts = init ? Object.assign({}, init) : {};
+            if (opts && opts.cache && (typeof resource === 'string' && resource.includes('leaningtech.com') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
+                delete opts.cache;
+            }
+            try {
+                return await origFetch.call(this, resource, opts);
+            } catch (err) {
+                const errStr = (err ? err.message || err.toString() || '' : '').toUpperCase();
+                if (errStr.includes('CACHE') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
+                    console.warn('[CheerpJ Anti-Crash] Fetch failed due to cache restriction, retrying in clean mode:', resource, err);
+                    let cleanOpts = Object.assign({}, init || {});
+                    delete cleanOpts.cache;
+                    delete cleanOpts.integrity;
+                    cleanOpts.cache = 'no-store';
+                    try {
+                        return await origFetch.call(this, resource, cleanOpts);
+                    } catch (retryErr) {
+                        let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
+                        let sep = urlStr.includes('?') ? '&' : '?';
+                        return await origFetch.call(this, urlStr + sep + '_nocache=' + Date.now(), cleanOpts);
+                    }
+                }
+                throw err;
+            }
+        };
+    }
+    if (window.caches && window.caches.open) {
+        const origOpen = window.caches.open;
+        window.caches.open = async function(...args) {
+            try {
+                const cache = await origOpen.apply(this, args);
+                if (cache) {
+                    const origPut = cache.put;
+                    cache.put = async function(...putArgs) {
+                        try { return await origPut.apply(this, putArgs); }
+                        catch (e) { console.warn('[CheerpJ Cache Put Bypassed]:', e); }
+                    };
+                    const origAdd = cache.add;
+                    cache.add = async function(...addArgs) {
+                        try { return await origAdd.apply(this, addArgs); }
+                        catch (e) { console.warn('[CheerpJ Cache Add Bypassed]:', e); }
+                    };
+                    const origAddAll = cache.addAll;
+                    cache.addAll = async function(...addAllArgs) {
+                        try { return await origAddAll.apply(this, addAllArgs); }
+                        catch (e) { console.warn('[CheerpJ Cache AddAll Bypassed]:', e); }
+                    };
+                }
+                return cache;
+            } catch (e) {
+                console.warn('[CheerpJ Cache Open Bypassed] Cache storage restricted or unsupported:', e);
+                return {
+                    match: async () => undefined,
+                    matchAll: async () => [],
+                    add: async () => undefined,
+                    addAll: async () => undefined,
+                    put: async () => undefined,
+                    delete: async () => false,
+                    keys: async () => []
+                };
+            }
+        };
+    }
+})();
+
 const evtQueue = new EventQueue();
 const sp = new URLSearchParams(location.search);
 
