@@ -64,9 +64,9 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
   if (isJar) {
     // J2ME games use stable FreeJ2ME CheerpJ Web port hosted locally (same-origin) with auto URL boot
     return (
-      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-3 sm:p-4">
-        {/* Helper instructions for CheerpJ FreeJ2ME */}
-        <div className="bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20] flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-2 sm:p-4">
+        {/* Helper instructions for CheerpJ FreeJ2ME (Hidden on mobile to save vertical space) */}
+        <div className="hidden sm:flex bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20] flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs sm:text-sm font-bold space-y-1 text-left">
             <p className="font-black text-[#ff4757] uppercase text-sm">
               Trình giả lập Java J2ME tự động nạp game:
@@ -85,7 +85,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
           </a>
         </div>
 
-        <div className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20]" style={{ paddingBottom: '65%', minHeight: '480px' }}>
+        <div className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20] h-[75vh] sm:h-[650px] min-h-[320px] max-h-[85vh]">
           <iframe
             src={`/freej2me/web/run.html?url=${encodeURIComponent(game.file_url)}`}
             className="absolute inset-0 w-full h-full border-0 bg-black"

@@ -18,6 +18,7 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
   const [canPlay, setCanPlay] = useState(false);
   const [startTime, setStartTime] = useState<number>(0);
   const [isGamepadVisible, setIsGamepadVisible] = useState<boolean>(false);
+  const [isMobileImmersive, setIsMobileImmersive] = useState<boolean>(false);
   const supabase = createClient();
 
   const platform: 'GBA' | 'JAR' =
@@ -29,11 +30,26 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
       : 'GBA';
 
   useEffect(() => {
-    // Auto-detect mobile/touch devices to enable gamepad by default for both GBA & JAR
+    // Auto-detect mobile/touch devices to enable gamepad by default and trigger mobile immersive landscape mode
     if (typeof window !== 'undefined') {
-      const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 || window.innerWidth < 768;
+      const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 || window.innerWidth < 1024;
       if (isTouch) {
         setIsGamepadVisible(true);
+        setIsMobileImmersive(true);
+        // Automatically try locking landscape and requesting fullscreen on touch/click
+        const triggerLandscape = () => {
+          try {
+            if (screen && (screen.orientation as any) && (screen.orientation as any).lock) {
+              (screen.orientation as any).lock('landscape').catch(() => {});
+            }
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+              document.documentElement.requestFullscreen().catch(() => {});
+            }
+          } catch (e) {}
+        };
+        triggerLandscape();
+        window.addEventListener('touchstart', triggerLandscape, { once: true });
+        window.addEventListener('click', triggerLandscape, { once: true });
       }
     }
 
@@ -82,6 +98,82 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
     );
   }
 
+  // Mobile Immersive Fullscreen Mode (Hides website Header, Footer, and Banners leaving ONLY the game)
+  if (isMobileImmersive) {
+    return (
+      <div className="fixed inset-0 z-[99999] bg-black w-screen h-screen flex flex-col justify-between overflow-hidden select-none">
+        {/* Minimal Immersive Top Bar */}
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]/95 text-white z-50 border-b border-white/10 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black bg-[#ff4757] px-2 py-0.5 rounded-md uppercase tracking-wide">
+              {platform}
+            </span>
+            <span className="text-xs sm:text-sm font-black truncate max-w-[180px] sm:max-w-md">{game.title}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {platform === 'JAR' && (
+              <button
+                onClick={() => setIsGamepadVisible(!isGamepadVisible)}
+                className={`px-2.5 py-1 rounded-lg font-black text-[11px] uppercase border border-white/20 transition-all ${
+                  isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 text-gray-300'
+                }`}
+              >
+                Nút: {isGamepadVisible ? 'Bật' : 'Tắt'}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                try {
+                  if (screen && (screen.orientation as any) && (screen.orientation as any).lock) {
+                    (screen.orientation as any).lock('landscape').catch(() => {});
+                  }
+                  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                  }
+                } catch (e) {}
+              }}
+              className="px-2.5 py-1 bg-[#3742fa] hover:bg-[#2f35ca] text-white text-[11px] font-black rounded-lg border border-white/20 transition-all uppercase"
+            >
+              Xoay Ngang
+            </button>
+            <button
+              onClick={() => {
+                setIsMobileImmersive(false);
+                try {
+                  if (document.fullscreenElement && document.exitFullscreen) {
+                    document.exitFullscreen().catch(() => {});
+                  }
+                  if (screen && (screen.orientation as any) && (screen.orientation as any).unlock) {
+                    (screen.orientation as any).unlock();
+                  }
+                } catch (e) {}
+              }}
+              className="px-2.5 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[11px] font-black rounded-lg border border-white/20 transition-all uppercase"
+            >
+              Thoát
+            </button>
+          </div>
+        </div>
+
+        {/* Game Canvas / Iframe Fullscreen Area */}
+        <div className="flex-1 w-full h-full relative overflow-hidden bg-black flex items-center justify-center">
+          <div className="w-full h-full flex items-center justify-center">
+            <EmulatorPlayer game={game} />
+          </div>
+        </div>
+
+        {/* Dedicated Virtual Gamepad for JAR Only */}
+        {platform === 'JAR' && (
+          <VirtualGamepad
+            platform={platform}
+            visible={isGamepadVisible}
+            onClose={() => setIsGamepadVisible(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Emulator & Custom Controls Box */}
@@ -110,12 +202,14 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
         </div>
       </div>
 
-      {/* Virtual On-Screen Gamepad for Touch Devices */}
-      <VirtualGamepad
-        platform={platform}
-        visible={isGamepadVisible}
-        onClose={() => setIsGamepadVisible(false)}
-      />
+      {/* Virtual On-Screen Gamepad for JAR Only */}
+      {platform === 'JAR' && (
+        <VirtualGamepad
+          platform={platform}
+          visible={isGamepadVisible}
+          onClose={() => setIsGamepadVisible(false)}
+        />
+      )}
     </div>
   );
 }

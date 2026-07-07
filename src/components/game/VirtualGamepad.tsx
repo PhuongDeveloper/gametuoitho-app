@@ -141,8 +141,8 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
     return map[btn] || 'Enter';
   };
 
-  // Virtual gamepad is dedicated to GBA & JAR where same-origin DOM keyboard events work flawlessly
-  if (!visible) return null;
+  // Virtual gamepad is dedicated ONLY to JAR (Java J2ME). For GBA, we let EmulatorJS handle its built-in touch controls!
+  if (platform === 'GBA' || !visible) return null;
 
   if (isMinimized) {
     return (
@@ -156,42 +156,35 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
   }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-40 flex flex-col justify-end p-4 pb-6 select-none touch-none">
+    <div className="fixed inset-0 pointer-events-none z-40 select-none touch-none">
       {/* Top bar controls for Gamepad */}
-      <div className="flex justify-between items-center mb-auto pointer-events-auto w-full max-w-4xl mx-auto pt-2 px-2">
-        <span className="text-xs font-black text-[#231f20] bg-[#fff8e1] px-3.5 py-1.5 rounded-xl border-[3px] border-[#231f20] shadow-[3px_3px_0px_#231f20] uppercase tracking-wide">
-          Nút Ảo {platform} (Chạm để điều khiển)
-        </span>
-        <div className="flex gap-2">
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50 pointer-events-auto flex gap-2">
+        <button
+          onClick={() => setIsMinimized(true)}
+          className="px-3 py-1.5 bg-white/90 backdrop-blur hover:bg-[#fff8e1] text-[#231f20] text-xs font-black uppercase rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:translate-y-0.5 transition-all"
+        >
+          Thu gọn Nút
+        </button>
+        {onClose && (
           <button
-            onClick={() => setIsMinimized(true)}
-            className="px-3.5 py-1.5 bg-white hover:bg-[#fff8e1] text-[#231f20] text-xs font-black uppercase rounded-xl border-[3px] border-[#231f20] shadow-[3px_3px_0px_#231f20] active:translate-y-0.5 transition-all"
+            onClick={onClose}
+            className="px-3 py-1.5 bg-[#ff4757]/90 backdrop-blur hover:bg-[#ff2e43] text-white text-xs font-black uppercase rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:translate-y-0.5 transition-all"
           >
-            Thu gọn
+            Tắt
           </button>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="px-3.5 py-1.5 bg-[#ff4757] hover:bg-[#ff2e43] text-white text-xs font-black uppercase rounded-xl border-[3px] border-[#231f20] shadow-[3px_3px_0px_#231f20] active:translate-y-0.5 transition-all"
-            >
-              Tắt
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Main Controller Area */}
-      <div className="flex justify-between items-end w-full max-w-6xl mx-auto gap-4">
-        
-        {/* Left Side: D-PAD */}
-        <div className="pointer-events-auto relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+      {/* Left Corner: D-PAD */}
+      <div className="fixed left-3 bottom-3 sm:left-6 sm:bottom-6 z-50 pointer-events-auto flex flex-col items-center">
+        <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center">
           {/* UP */}
           <button
             onPointerDown={() => dispatchKey('UP', true)}
             onPointerUp={() => dispatchKey('UP', false)}
             onPointerLeave={() => dispatchKey('UP', false)}
             onPointerCancel={() => dispatchKey('UP', false)}
-            className={`absolute top-0 w-12 h-12 sm:w-14 sm:h-14 rounded-t-xl border-[3px] border-[#231f20] font-black text-lg flex items-center justify-center transition-transform shadow-[3px_3px_0px_#231f20] ${
+            className={`absolute top-0 w-10 h-10 sm:w-12 sm:h-12 rounded-t-xl border-[3px] border-[#231f20] font-black text-base sm:text-lg flex items-center justify-center transition-transform shadow-[2px_2px_0px_#231f20] ${
               activeKeys['UP'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
             }`}
           >
@@ -203,7 +196,7 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
             onPointerUp={() => dispatchKey('DOWN', false)}
             onPointerLeave={() => dispatchKey('DOWN', false)}
             onPointerCancel={() => dispatchKey('DOWN', false)}
-            className={`absolute bottom-0 w-12 h-12 sm:w-14 sm:h-14 rounded-b-xl border-[3px] border-[#231f20] font-black text-lg flex items-center justify-center transition-transform shadow-[3px_3px_0px_#231f20] ${
+            className={`absolute bottom-0 w-10 h-10 sm:w-12 sm:h-12 rounded-b-xl border-[3px] border-[#231f20] font-black text-base sm:text-lg flex items-center justify-center transition-transform shadow-[2px_2px_0px_#231f20] ${
               activeKeys['DOWN'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
             }`}
           >
@@ -215,7 +208,7 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
             onPointerUp={() => dispatchKey('LEFT', false)}
             onPointerLeave={() => dispatchKey('LEFT', false)}
             onPointerCancel={() => dispatchKey('LEFT', false)}
-            className={`absolute left-0 w-12 h-12 sm:w-14 sm:h-14 rounded-l-xl border-[3px] border-[#231f20] font-black text-lg flex items-center justify-center transition-transform shadow-[3px_3px_0px_#231f20] ${
+            className={`absolute left-0 w-10 h-10 sm:w-12 sm:h-12 rounded-l-xl border-[3px] border-[#231f20] font-black text-base sm:text-lg flex items-center justify-center transition-transform shadow-[2px_2px_0px_#231f20] ${
               activeKeys['LEFT'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
             }`}
           >
@@ -227,171 +220,90 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
             onPointerUp={() => dispatchKey('RIGHT', false)}
             onPointerLeave={() => dispatchKey('RIGHT', false)}
             onPointerCancel={() => dispatchKey('RIGHT', false)}
-            className={`absolute right-0 w-12 h-12 sm:w-14 sm:h-14 rounded-r-xl border-[3px] border-[#231f20] font-black text-lg flex items-center justify-center transition-transform shadow-[3px_3px_0px_#231f20] ${
+            className={`absolute right-0 w-10 h-10 sm:w-12 sm:h-12 rounded-r-xl border-[3px] border-[#231f20] font-black text-base sm:text-lg flex items-center justify-center transition-transform shadow-[2px_2px_0px_#231f20] ${
               activeKeys['RIGHT'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
             }`}
           >
             ▶
           </button>
           {/* Center piece */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#231f20] border-[3px] border-[#231f20] rounded-xl" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#231f20] border-[3px] border-[#231f20] rounded-xl" />
         </div>
+      </div>
 
-        {/* Center: START / SELECT */}
-        <div className="pointer-events-auto flex gap-4 sm:gap-6 mb-2">
+      {/* Right Corner: JAR J2ME Numpad & Softkeys */}
+      <div className="fixed right-3 bottom-3 sm:right-6 sm:bottom-6 z-50 pointer-events-auto">
+        <div className="grid grid-cols-3 gap-1 sm:gap-1.5 w-36 sm:w-48 bg-[#fff8e1]/95 backdrop-blur p-2 sm:p-2.5 rounded-2xl border-[3px] border-[#231f20] shadow-[4px_4px_0px_#231f20] max-h-[85vh] overflow-y-auto">
           <button
-            onPointerDown={() => dispatchKey('SELECT', true)}
-            onPointerUp={() => dispatchKey('SELECT', false)}
-            onPointerLeave={() => dispatchKey('SELECT', false)}
-            onPointerCancel={() => dispatchKey('SELECT', false)}
-            className={`px-4 sm:px-6 py-2 rounded-xl border-[3px] border-[#231f20] font-black text-xs tracking-wider uppercase transition-all shadow-[3px_3px_0px_#231f20] ${
-              activeKeys['SELECT'] ? 'bg-[#ffa502] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-            }`}
+            onPointerDown={() => dispatchKey('SOFT_LEFT', true)}
+            onPointerUp={() => dispatchKey('SOFT_LEFT', false)}
+            onPointerLeave={() => dispatchKey('SOFT_LEFT', false)}
+            onPointerCancel={() => dispatchKey('SOFT_LEFT', false)}
+            className="col-span-1 py-1 sm:py-1.5 bg-[#ffa502] hover:bg-[#e59400] text-white font-black text-[11px] sm:text-xs rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:translate-y-0.5 transition-all"
           >
-            Select
+            L.Soft
           </button>
           <button
-            onPointerDown={() => dispatchKey('START', true)}
-            onPointerUp={() => dispatchKey('START', false)}
-            onPointerLeave={() => dispatchKey('START', false)}
-            onPointerCancel={() => dispatchKey('START', false)}
-            className={`px-4 sm:px-6 py-2 rounded-xl border-[3px] border-[#231f20] font-black text-xs tracking-wider uppercase transition-all shadow-[3px_3px_0px_#231f20] ${
-              activeKeys['START'] ? 'bg-[#2ed573] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-            }`}
+            onPointerDown={() => dispatchKey('FIRE', true)}
+            onPointerUp={() => dispatchKey('FIRE', false)}
+            onPointerLeave={() => dispatchKey('FIRE', false)}
+            onPointerCancel={() => dispatchKey('FIRE', false)}
+            className="col-span-1 py-1 sm:py-1.5 bg-[#ff4757] hover:bg-[#ff2e43] text-white font-black text-[11px] sm:text-xs rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:translate-y-0.5 transition-all"
           >
-            Start
+            FIRE
+          </button>
+          <button
+            onPointerDown={() => dispatchKey('SOFT_RIGHT', true)}
+            onPointerUp={() => dispatchKey('SOFT_RIGHT', false)}
+            onPointerLeave={() => dispatchKey('SOFT_RIGHT', false)}
+            onPointerCancel={() => dispatchKey('SOFT_RIGHT', false)}
+            className="col-span-1 py-1 sm:py-1.5 bg-[#ffa502] hover:bg-[#e59400] text-white font-black text-[11px] sm:text-xs rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:translate-y-0.5 transition-all"
+          >
+            R.Soft
+          </button>
+
+          {/* Numpad 1-9 */}
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
+            <button
+              key={num}
+              onPointerDown={() => dispatchKey(`KEY_${num}`, true)}
+              onPointerUp={() => dispatchKey(`KEY_${num}`, false)}
+              onPointerLeave={() => dispatchKey(`KEY_${num}`, false)}
+              onPointerCancel={() => dispatchKey(`KEY_${num}`, false)}
+              className="py-1 sm:py-1.5 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-xs sm:text-sm rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
+            >
+              {num}
+            </button>
+          ))}
+
+          <button
+            onPointerDown={() => dispatchKey('KEY_STAR', true)}
+            onPointerUp={() => dispatchKey('KEY_STAR', false)}
+            onPointerLeave={() => dispatchKey('KEY_STAR', false)}
+            onPointerCancel={() => dispatchKey('KEY_STAR', false)}
+            className="py-1 sm:py-1.5 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-xs sm:text-sm rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
+          >
+            *
+          </button>
+          <button
+            onPointerDown={() => dispatchKey('KEY_0', true)}
+            onPointerUp={() => dispatchKey('KEY_0', false)}
+            onPointerLeave={() => dispatchKey('KEY_0', false)}
+            onPointerCancel={() => dispatchKey('KEY_0', false)}
+            className="py-1 sm:py-1.5 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-xs sm:text-sm rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
+          >
+            0
+          </button>
+          <button
+            onPointerDown={() => dispatchKey('KEY_POUND', true)}
+            onPointerUp={() => dispatchKey('KEY_POUND', false)}
+            onPointerLeave={() => dispatchKey('KEY_POUND', false)}
+            onPointerCancel={() => dispatchKey('KEY_POUND', false)}
+            className="py-1 sm:py-1.5 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-xs sm:text-sm rounded-lg sm:rounded-xl border-2 border-[#231f20] shadow-[1px_1px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
+          >
+            #
           </button>
         </div>
-
-        {/* Right Side: ACTION BUTTONS (GBA vs JAR) */}
-        <div className="pointer-events-auto">
-          {platform === 'GBA' ? (
-            <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
-              {/* B Button */}
-              <button
-                onPointerDown={() => dispatchKey('B', true)}
-                onPointerUp={() => dispatchKey('B', false)}
-                onPointerLeave={() => dispatchKey('B', false)}
-                onPointerCancel={() => dispatchKey('B', false)}
-                className={`absolute left-0 bottom-4 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-[3px] border-[#231f20] font-black text-xl flex items-center justify-center transition-all shadow-[4px_4px_0px_#231f20] ${
-                  activeKeys['B'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[2px_2px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-                }`}
-              >
-                B
-              </button>
-              {/* A Button */}
-              <button
-                onPointerDown={() => dispatchKey('A', true)}
-                onPointerUp={() => dispatchKey('A', false)}
-                onPointerLeave={() => dispatchKey('A', false)}
-                onPointerCancel={() => dispatchKey('A', false)}
-                className={`absolute right-0 top-4 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-[3px] border-[#231f20] font-black text-xl flex items-center justify-center transition-all shadow-[4px_4px_0px_#231f20] ${
-                  activeKeys['A'] ? 'bg-[#ff4757] text-white translate-y-0.5 shadow-[2px_2px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-                }`}
-              >
-                A
-              </button>
-              {/* L Button */}
-              <button
-                onPointerDown={() => dispatchKey('L', true)}
-                onPointerUp={() => dispatchKey('L', false)}
-                onPointerLeave={() => dispatchKey('L', false)}
-                onPointerCancel={() => dispatchKey('L', false)}
-                className={`absolute top-0 left-4 px-4 py-1.5 rounded-xl border-[3px] border-[#231f20] font-black text-xs uppercase shadow-[3px_3px_0px_#231f20] transition-all ${
-                  activeKeys['L'] ? 'bg-[#3742fa] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-                }`}
-              >
-                L
-              </button>
-              {/* R Button */}
-              <button
-                onPointerDown={() => dispatchKey('R', true)}
-                onPointerUp={() => dispatchKey('R', false)}
-                onPointerLeave={() => dispatchKey('R', false)}
-                onPointerCancel={() => dispatchKey('R', false)}
-                className={`absolute bottom-0 right-4 px-4 py-1.5 rounded-xl border-[3px] border-[#231f20] font-black text-xs uppercase shadow-[3px_3px_0px_#231f20] transition-all ${
-                  activeKeys['R'] ? 'bg-[#3742fa] text-white translate-y-0.5 shadow-[1px_1px_0px_#231f20]' : 'bg-white hover:bg-[#fff8e1] text-[#231f20]'
-                }`}
-              >
-                R
-              </button>
-            </div>
-          ) : (
-            /* JAR J2ME Numpad & Softkeys */
-            <div className="grid grid-cols-3 gap-2 w-44 sm:w-52 bg-[#fff8e1] p-3 rounded-2xl border-[3px] border-[#231f20] shadow-[6px_6px_0px_#231f20]">
-              <button
-                onPointerDown={() => dispatchKey('SOFT_LEFT', true)}
-                onPointerUp={() => dispatchKey('SOFT_LEFT', false)}
-                onPointerLeave={() => dispatchKey('SOFT_LEFT', false)}
-                onPointerCancel={() => dispatchKey('SOFT_LEFT', false)}
-                className="col-span-1 py-2 bg-[#ffa502] hover:bg-[#e59400] text-white font-black text-xs rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:translate-y-0.5 transition-all"
-              >
-                L.Soft
-              </button>
-              <button
-                onPointerDown={() => dispatchKey('FIRE', true)}
-                onPointerUp={() => dispatchKey('FIRE', false)}
-                onPointerLeave={() => dispatchKey('FIRE', false)}
-                onPointerCancel={() => dispatchKey('FIRE', false)}
-                className="col-span-1 py-2 bg-[#ff4757] hover:bg-[#ff2e43] text-white font-black text-xs rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:translate-y-0.5 transition-all"
-              >
-                FIRE
-              </button>
-              <button
-                onPointerDown={() => dispatchKey('SOFT_RIGHT', true)}
-                onPointerUp={() => dispatchKey('SOFT_RIGHT', false)}
-                onPointerLeave={() => dispatchKey('SOFT_RIGHT', false)}
-                onPointerCancel={() => dispatchKey('SOFT_RIGHT', false)}
-                className="col-span-1 py-2 bg-[#ffa502] hover:bg-[#e59400] text-white font-black text-xs rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:translate-y-0.5 transition-all"
-              >
-                R.Soft
-              </button>
-
-              {/* Numpad 1-9 */}
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((num) => (
-                <button
-                  key={num}
-                  onPointerDown={() => dispatchKey(`KEY_${num}`, true)}
-                  onPointerUp={() => dispatchKey(`KEY_${num}`, false)}
-                  onPointerLeave={() => dispatchKey(`KEY_${num}`, false)}
-                  onPointerCancel={() => dispatchKey(`KEY_${num}`, false)}
-                  className="py-2 sm:py-2.5 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-sm rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
-                >
-                  {num}
-                </button>
-              ))}
-
-              <button
-                onPointerDown={() => dispatchKey('KEY_STAR', true)}
-                onPointerUp={() => dispatchKey('KEY_STAR', false)}
-                onPointerLeave={() => dispatchKey('KEY_STAR', false)}
-                onPointerCancel={() => dispatchKey('KEY_STAR', false)}
-                className="py-2 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-sm rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
-              >
-                *
-              </button>
-              <button
-                onPointerDown={() => dispatchKey('KEY_0', true)}
-                onPointerUp={() => dispatchKey('KEY_0', false)}
-                onPointerLeave={() => dispatchKey('KEY_0', false)}
-                onPointerCancel={() => dispatchKey('KEY_0', false)}
-                className="py-2 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-sm rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
-              >
-                0
-              </button>
-              <button
-                onPointerDown={() => dispatchKey('KEY_POUND', true)}
-                onPointerUp={() => dispatchKey('KEY_POUND', false)}
-                onPointerLeave={() => dispatchKey('KEY_POUND', false)}
-                onPointerCancel={() => dispatchKey('KEY_POUND', false)}
-                className="py-2 bg-white hover:bg-[#fff8e1] text-[#231f20] font-black text-sm rounded-xl border-[3px] border-[#231f20] shadow-[2px_2px_0px_#231f20] active:bg-[#ff4757] active:text-white active:translate-y-0.5 transition-all"
-              >
-                #
-              </button>
-            </div>
-          )}
-        </div>
-
       </div>
     </div>
   );

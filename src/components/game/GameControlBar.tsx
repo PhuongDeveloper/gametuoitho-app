@@ -135,12 +135,7 @@ export default function GameControlBar({
                 <span>Tải Game</span>
               </button>
             </>
-          ) : (
-            <div className="flex items-center gap-2 bg-black/40 p-1.5 px-3 rounded-xl border border-white/20">
-              <span className="text-xs font-black text-[#ff4757]">Giả Lập Java:</span>
-              <span className="text-xs font-bold text-gray-200">FreeJ2ME Web (CheerpJ)</span>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Center: Volume Slider */}
@@ -157,7 +152,7 @@ export default function GameControlBar({
           <span className="text-xs font-bold w-7 text-right">{volume}%</span>
         </div>
 
-        {/* Right: Config, Gamepad Toggle, Fullscreen */}
+        {/* Right: Config, Gamepad Toggle (JAR Only), Fullscreen */}
         <div className="flex items-center gap-2 flex-wrap ml-auto">
           <button
             onClick={() => setIsConfigOpen(true)}
@@ -166,13 +161,15 @@ export default function GameControlBar({
             <span>Đổi Phím</span>
           </button>
 
-          <button
-            onClick={onToggleGamepad}
-            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1 ${isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-              }`}
-          >
-            <span>Nút Ảo: {isGamepadVisible ? 'Bật' : 'Tắt'}</span>
-          </button>
+          {platform === 'JAR' && (
+            <button
+              onClick={onToggleGamepad}
+              className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1 ${isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                }`}
+            >
+              <span>Nút Ảo: {isGamepadVisible ? 'Bật' : 'Tắt'}</span>
+            </button>
+          )}
 
           <button
             onClick={handleFullscreen}
