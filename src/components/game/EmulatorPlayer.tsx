@@ -38,7 +38,13 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
     (window as any).EJS_startOnLoaded = true;
     (window as any).EJS_oldCores = false;
 
-    // Force hide default EmulatorJS bottom button bar and controls
+    // Performance & Hardware Acceleration Optimizations for GBA
+    (window as any).EJS_multithread = false; // Prevent thread lockups & memory overhead on mobile
+    (window as any).EJS_forceWebAssembly = true; // Use pure WebAssembly execution
+    (window as any).EJS_videoSync = false; // Disable V-Sync lock on 120Hz/144Hz screens to stop heating & battery drain
+    (window as any).EJS_fpsLimit = 60; // Cap at 60 FPS for smooth gameplay without thermal throttling
+    (window as any).EJS_audioResampler = 'linear'; // Lightweight audio resampler to prevent stutter on weak CPUs
+
     // Force hide default EmulatorJS bottom button bar but KEEP touch controls for mobile
     (window as any).EJS_hideButtonBar = true;
     (window as any).EJS_hideControls = false;
@@ -70,6 +76,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
           <iframe
             src={`/freej2me/web/run.html?url=${encodeURIComponent(game.file_url)}`}
             className="absolute inset-0 w-full h-full border-0 bg-black"
+            style={{ transform: 'translateZ(0)', willChange: 'transform', backfaceVisibility: 'hidden' }}
             allow="gamepad; autoplay; fullscreen"
             title={`Play ${game.title}`}
           />
@@ -96,6 +103,13 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
           object-fit: contain !important;
           margin: 0 auto !important;
           display: block !important;
+          image-rendering: -moz-crisp-edges !important;
+          image-rendering: -webkit-optimize-contrast !important;
+          image-rendering: pixelated !important;
+          image-rendering: crisp-edges !important;
+          transform: translateZ(0) !important;
+          will-change: transform, contents !important;
+          backface-visibility: hidden !important;
         }
       `}</style>
       <div

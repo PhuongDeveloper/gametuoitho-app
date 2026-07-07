@@ -240,7 +240,7 @@ async function init() {
     document.getElementById("loading").textContent = "Loading CheerpJ...";
 
     display = document.getElementById('display');
-    screenCtx = display.getContext('2d');
+    screenCtx = display.getContext('2d', { alpha: false, desynchronized: true });
 
     setListeners();
 
@@ -250,6 +250,20 @@ async function init() {
         window.evtQueue.queueEvent({kind: 'player-eom', player: e.target});
     })
     window.libmedia = new LibMedia();
+
+    document.addEventListener('visibilitychange', () => {
+        try {
+            if (document.hidden) {
+                if (window.libmidi && window.libmidi.audioCtx && window.libmidi.audioCtx.suspend) {
+                    window.libmidi.audioCtx.suspend().catch(() => {});
+                }
+            } else {
+                if (window.libmidi && window.libmidi.audioCtx && window.libmidi.audioCtx.resume) {
+                    window.libmidi.audioCtx.resume().catch(() => {});
+                }
+            }
+        } catch (e) {}
+    });
 
     await cheerpjInit({
         enableDebug: false,
