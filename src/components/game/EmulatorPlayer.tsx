@@ -65,18 +65,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
   if (isJar) {
     // J2ME games use stable FreeJ2ME CheerpJ Web port hosted locally (same-origin) with auto URL boot
     return (
-      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-2 sm:p-4">
-        {/* Helper instructions for CheerpJ FreeJ2ME (Hidden on mobile to save vertical space) */}
-        <div className="hidden sm:block bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20]">
-          <div className="text-xs sm:text-sm font-bold space-y-1 text-left">
-            <p className="font-black text-[#ff4757] uppercase text-sm">
-              Trình giả lập Java J2ME tự động nạp game:
-            </p>
-            <p>Trò chơi đang được tự động tải và nạp vào bộ nhớ trình giả lập. Bạn không cần chọn file thủ công.</p>
-            <p>Sử dụng bàn phím vật lý hoặc bấm nút <span className="font-black underline">Hiện Tay Cầm Ảo</span> phía dưới để điều khiển.</p>
-          </div>
-        </div>
-
+      <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden p-2 sm:p-4">
         <div className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20] h-[75vh] sm:h-[650px] min-h-[320px] max-h-[85vh]">
           <iframe
             src={`/freej2me/web/run.html?url=${encodeURIComponent(game.file_url)}`}
@@ -114,7 +103,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
         ref={containerRef}
         className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20] h-[75vh] sm:h-[650px] min-h-[320px] max-h-[85vh] flex items-center justify-center"
       />
-      <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold rounded-xl border border-white/10">
+      <div className="hidden lg:block bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold rounded-xl border border-white/10">
         <p>Mẹo: Dùng thanh công cụ phía dưới để Lưu/Tải Game hoặc đổi phím điều khiển!</p>
       </div>
     </div>
