@@ -13,111 +13,146 @@ import jsReferenceNatives from "../libjs/libjsreference.js";
 import mediaBridgeNatives from "../libjs/libmediabridge.js";
 import midiBridgeNatives from "../libjs/libmidibridge.js";
 
-// [Universal Cache Resilience & Anti-Crash Patch] Eliminates net::ERR_CACHE_OPERATION_NOT_SUPPORTED in CheerpJ XHR & Fetch
+// [Omni-Scope Cache Resilience Patch] Prevents ERR_CACHE_OPERATION_NOT_SUPPORTED across Window, Workers, and Iframes
 (function() {
-    if (typeof window === 'undefined' || window._cheerpjUniversalPatched) return;
-    window._cheerpjUniversalPatched = true;
+    if (typeof window === 'undefined' || window._cheerpjOmniPatched) return;
+    window._cheerpjOmniPatched = true;
     window._cheerpjSessionId = Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
 
-    // 1. Patch XMLHttpRequest (XHR) - Used by cheerpOS.js ddlSend for JRE libraries!
-    if (window.XMLHttpRequest) {
-        const origXhrOpen = XMLHttpRequest.prototype.open;
-        const origXhrSend = XMLHttpRequest.prototype.send;
-        
-        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-            this._method = method;
-            this._url = url;
-            if (typeof url === 'string' && (url.includes('leaningtech.com') || url.includes('.jar') || url.includes('/jre/') || url.includes('/lib/'))) {
-                const sep = url.includes('?') ? '&' : '?';
-                if (!url.includes('_cb=')) {
-                    url = url + sep + '_cb=' + window._cheerpjSessionId;
-                    this._url = url;
-                }
-            }
-            return origXhrOpen.call(this, method, url, ...rest);
-        };
+    const applyPatchToScope = function(targetScope, sessionId) {
+        if (!targetScope || targetScope._cheerpjScopePatched) return;
+        targetScope._cheerpjScopePatched = true;
+        targetScope._cheerpjSessionId = sessionId;
 
-        XMLHttpRequest.prototype.send = function(...args) {
-            const xhr = this;
-            if (xhr._url && typeof xhr._url === 'string' && (xhr._url.includes('leaningtech.com') || xhr._url.includes('.jar') || xhr._url.includes('/jre/'))) {
-                xhr.addEventListener('error', function(e) {
-                    console.warn('[CheerpJ XHR Anti-Crash] XHR network/cache error intercepted for:', xhr._url, e);
-                });
-            }
-            return origXhrSend.apply(this, args);
-        };
-    }
-
-    // 2. Patch window.fetch
-    if (window.fetch) {
-        const origFetch = window.fetch;
-        window.fetch = async function(resource, init) {
-            let opts = init ? Object.assign({}, init) : {};
-            let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
+        // 1. Patch XMLHttpRequest (XHR)
+        if (targetScope.XMLHttpRequest) {
+            const origXhrOpen = targetScope.XMLHttpRequest.prototype.open;
+            const origXhrSend = targetScope.XMLHttpRequest.prototype.send;
             
-            if (opts && opts.cache && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
-                delete opts.cache;
-            }
-            if (urlStr && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/'))) {
-                const sep = urlStr.includes('?') ? '&' : '?';
-                if (!urlStr.includes('_cb=')) {
-                    urlStr = urlStr + sep + '_cb=' + window._cheerpjSessionId;
+            targetScope.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+                this._method = method;
+                this._url = url;
+                if (typeof url === 'string' && (url.includes('leaningtech.com') || url.includes('.jar') || url.includes('/jre/') || url.includes('/lib/'))) {
+                    const sep = url.includes('?') ? '&' : '?';
+                    if (!url.includes('_cb=')) {
+                        url = url + sep + '_cb=' + targetScope._cheerpjSessionId;
+                        this._url = url;
+                    }
                 }
-            }
-            try {
-                return await origFetch.call(this, urlStr || resource, opts);
-            } catch (err) {
-                const errStr = (err ? err.message || err.toString() || '' : '').toUpperCase();
-                if (errStr.includes('CACHE') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
-                    console.warn('[CheerpJ Fetch Anti-Crash] Retrying in no-store mode:', urlStr, err);
-                    let cleanOpts = Object.assign({}, init || {});
-                    delete cleanOpts.cache;
-                    delete cleanOpts.integrity;
-                    cleanOpts.cache = 'no-store';
+                return origXhrOpen.call(this, method, url, ...rest);
+            };
+
+            targetScope.XMLHttpRequest.prototype.send = function(...args) {
+                const xhr = this;
+                if (xhr._url && typeof xhr._url === 'string' && (xhr._url.includes('leaningtech.com') || xhr._url.includes('.jar') || xhr._url.includes('/jre/'))) {
+                    xhr.addEventListener('error', function(e) {
+                        console.warn('[CheerpJ XHR Anti-Crash] XHR error in scope:', xhr._url, e);
+                    });
+                }
+                return origXhrSend.apply(this, args);
+            };
+        }
+
+        // 2. Patch fetch
+        if (targetScope.fetch) {
+            const origFetch = targetScope.fetch;
+            targetScope.fetch = async function(resource, init) {
+                let opts = init ? Object.assign({}, init) : {};
+                let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
+                
+                if (opts && opts.cache && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
+                    delete opts.cache;
+                }
+                if (urlStr && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/'))) {
                     const sep = urlStr.includes('?') ? '&' : '?';
-                    return await origFetch.call(this, urlStr + sep + '_retry=' + Date.now(), cleanOpts);
+                    if (!urlStr.includes('_cb=')) {
+                        urlStr = urlStr + sep + '_cb=' + targetScope._cheerpjSessionId;
+                    }
                 }
-                throw err;
+                try {
+                    return await origFetch.call(this, urlStr || resource, opts);
+                } catch (err) {
+                    const errStr = (err ? err.message || err.toString() || '' : '').toUpperCase();
+                    if (errStr.includes('CACHE') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
+                        console.warn('[CheerpJ Fetch Anti-Crash] Retrying cleanly:', urlStr, err);
+                        let cleanOpts = Object.assign({}, init || {});
+                        delete cleanOpts.cache;
+                        delete cleanOpts.integrity;
+                        cleanOpts.cache = 'no-store';
+                        const sep = urlStr.includes('?') ? '&' : '?';
+                        return await origFetch.call(this, urlStr + sep + '_retry=' + Date.now(), cleanOpts);
+                    }
+                    throw err;
+                }
+            };
+        }
+
+        // 3. Patch Cache Storage API
+        if (targetScope.caches && targetScope.caches.open) {
+            const origOpen = targetScope.caches.open;
+            targetScope.caches.open = async function(...args) {
+                try {
+                    const cache = await origOpen.apply(this, args);
+                    if (cache) {
+                        const origPut = cache.put;
+                        cache.put = async function(...putArgs) {
+                            try { return await origPut.apply(this, putArgs); }
+                            catch (e) { console.warn('[CheerpJ Cache Put Bypassed]:', e); }
+                        };
+                    }
+                    return cache;
+                } catch (e) {
+                    return {
+                        match: async () => undefined,
+                        matchAll: async () => [],
+                        add: async () => undefined,
+                        addAll: async () => undefined,
+                        put: async () => undefined,
+                        delete: async () => false,
+                        keys: async () => []
+                    };
+                }
+            };
+        }
+    };
+
+    // A. Apply to Main Window
+    applyPatchToScope(window, window._cheerpjSessionId);
+
+    // B. Intercept Web Workers & Shared Workers
+    const patchWorkerConstructor = function(WorkerClass) {
+        if (!WorkerClass) return null;
+        const PatchedWorker = function(scriptURL, options) {
+            try {
+                const patchStr = `(${applyPatchToScope.toString()})(self, "${window._cheerpjSessionId}");`;
+                let importUrl = typeof scriptURL === 'string' ? scriptURL : (scriptURL ? scriptURL.toString() : '');
+                const blobContent = patchStr + '\nimportScripts("' + importUrl + '");';
+                const blob = new Blob([blobContent], { type: 'application/javascript' });
+                const blobUrl = URL.createObjectURL(blob);
+                return new WorkerClass(blobUrl, options);
+            } catch (e) {
+                console.warn('[CheerpJ Worker Intercept Bypassed]:', e);
+                return new WorkerClass(scriptURL, options);
             }
         };
-    }
+        PatchedWorker.prototype = WorkerClass.prototype;
+        return PatchedWorker;
+    };
 
-    // 3. Patch window.caches (Cache Storage API)
-    if (window.caches && window.caches.open) {
-        const origOpen = window.caches.open;
-        window.caches.open = async function(...args) {
-            try {
-                const cache = await origOpen.apply(this, args);
-                if (cache) {
-                    const origPut = cache.put;
-                    cache.put = async function(...putArgs) {
-                        try { return await origPut.apply(this, putArgs); }
-                        catch (e) { console.warn('[CheerpJ Cache Put Bypassed]:', e); }
-                    };
-                    const origAdd = cache.add;
-                    cache.add = async function(...addArgs) {
-                        try { return await origAdd.apply(this, addArgs); }
-                        catch (e) { console.warn('[CheerpJ Cache Add Bypassed]:', e); }
-                    };
-                    const origAddAll = cache.addAll;
-                    cache.addAll = async function(...addAllArgs) {
-                        try { return await origAddAll.apply(this, addAllArgs); }
-                        catch (e) { console.warn('[CheerpJ Cache AddAll Bypassed]:', e); }
-                    };
-                }
-                return cache;
-            } catch (e) {
-                console.warn('[CheerpJ Cache Open Bypassed] Storage restricted by browser:', e);
-                return {
-                    match: async () => undefined,
-                    matchAll: async () => [],
-                    add: async () => undefined,
-                    addAll: async () => undefined,
-                    put: async () => undefined,
-                    delete: async () => false,
-                    keys: async () => []
-                };
+    if (window.Worker) window.Worker = patchWorkerConstructor(window.Worker);
+    if (window.SharedWorker) window.SharedWorker = patchWorkerConstructor(window.SharedWorker);
+
+    // C. Intercept Child Iframes
+    if (typeof Element !== 'undefined' && Element.prototype.appendChild) {
+        const origAppendChild = Element.prototype.appendChild;
+        Element.prototype.appendChild = function(child) {
+            const res = origAppendChild.call(this, child);
+            if (child && child.tagName === 'IFRAME') {
+                try {
+                    if (child.contentWindow) applyPatchToScope(child.contentWindow, window._cheerpjSessionId);
+                } catch(e) {}
             }
+            return res;
         };
     }
 })();
