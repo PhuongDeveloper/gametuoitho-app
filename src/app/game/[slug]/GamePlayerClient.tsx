@@ -103,39 +103,17 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
     return (
       <div className="fixed inset-0 z-[99999] bg-black w-screen h-screen flex flex-col justify-between overflow-hidden select-none">
         {/* Minimal Immersive Top Bar */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]/95 text-white z-50 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]/95 text-white z-50 border-b border-white/10 shrink-0 gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="text-[11px] font-black bg-[#ff4757] px-2 py-0.5 rounded-md uppercase tracking-wide">
               {platform}
             </span>
-            <span className="text-xs sm:text-sm font-black truncate max-w-[180px] sm:max-w-md">{game.title}</span>
+            <span className="text-xs sm:text-sm font-black truncate max-w-[120px] sm:max-w-md">{game.title}</span>
           </div>
-          <div className="flex items-center gap-2">
-            {platform === 'JAR' && (
-              <button
-                onClick={() => setIsGamepadVisible(!isGamepadVisible)}
-                className={`px-2.5 py-1 rounded-lg font-black text-[11px] uppercase border border-white/20 transition-all ${
-                  isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                Nút: {isGamepadVisible ? 'Bật' : 'Tắt'}
-              </button>
-            )}
-            <button
-              onClick={() => {
-                try {
-                  if (screen && (screen.orientation as any) && (screen.orientation as any).lock) {
-                    (screen.orientation as any).lock('landscape').catch(() => {});
-                  }
-                  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().catch(() => {});
-                  }
-                } catch (e) {}
-              }}
-              className="px-2.5 py-1 bg-[#3742fa] hover:bg-[#2f35ca] text-white text-[11px] font-black rounded-lg border border-white/20 transition-all uppercase"
-            >
-              Xoay Ngang
-            </button>
+          <div className="text-[11px] sm:text-xs font-bold text-[#ffa502] animate-pulse truncate px-1 text-center">
+            ⚠️ Vui lòng xoay ngang màn hình điện thoại để tối ưu trải nghiệm của bạn.
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => {
                 setIsMobileImmersive(false);
@@ -148,7 +126,7 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
                   }
                 } catch (e) {}
               }}
-              className="px-2.5 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[11px] font-black rounded-lg border border-white/20 transition-all uppercase"
+              className="px-3 py-1 bg-[#ff4757] hover:bg-[#ff2e43] text-white text-xs font-black rounded-lg border border-white/20 transition-all uppercase shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5"
             >
               Thoát
             </button>

@@ -39,8 +39,9 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
     (window as any).EJS_oldCores = false;
 
     // Force hide default EmulatorJS bottom button bar and controls
+    // Force hide default EmulatorJS bottom button bar but KEEP touch controls for mobile
     (window as any).EJS_hideButtonBar = true;
-    (window as any).EJS_hideControls = true;
+    (window as any).EJS_hideControls = false;
     (window as any).EJS_Buttons = {
       playPause: false,
       restart: false,
@@ -49,7 +50,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
       fullscreen: false,
       saveState: false,
       loadState: false,
-      gamepad: false,
+      gamepad: true,
       cheat: false,
       volume: false,
     };
@@ -66,7 +67,7 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
     return (
       <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-2 sm:p-4">
         {/* Helper instructions for CheerpJ FreeJ2ME (Hidden on mobile to save vertical space) */}
-        <div className="hidden sm:flex bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20] flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="hidden sm:block bg-[#fff8e1] border-[3px] border-[#231f20] rounded-xl p-3 sm:p-4 text-[#231f20] shadow-[4px_4px_0px_#231f20]">
           <div className="text-xs sm:text-sm font-bold space-y-1 text-left">
             <p className="font-black text-[#ff4757] uppercase text-sm">
               Trình giả lập Java J2ME tự động nạp game:
@@ -74,15 +75,6 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
             <p>Trò chơi đang được tự động tải và nạp vào bộ nhớ trình giả lập. Bạn không cần chọn file thủ công.</p>
             <p>Sử dụng bàn phím vật lý hoặc bấm nút <span className="font-black underline">Hiện Tay Cầm Ảo</span> phía dưới để điều khiển.</p>
           </div>
-          <a
-            href={game.file_url}
-            download={`${game.title || 'game'}.jar`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto px-5 py-3 bg-[#ff4757] hover:bg-[#ff2e43] text-white font-black text-xs sm:text-sm rounded-xl border-[3px] border-[#231f20] shadow-[3px_3px_0px_#231f20] active:translate-y-0.5 transition-all whitespace-nowrap flex items-center justify-center gap-2 uppercase tracking-wide"
-          >
-            <span>Tải File Game .JAR</span>
-          </a>
         </div>
 
         <div className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20] h-[75vh] sm:h-[650px] min-h-[320px] max-h-[85vh]">
@@ -97,15 +89,13 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
     );
   }
 
-  // GBA EmulatorJS with custom CSS to hide any residual default bars
+  // GBA EmulatorJS with custom CSS to hide any residual default bars while preserving touch controls
   return (
-    <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden relative">
+    <div id="emulator-wrapper" className="emulator-container w-full bg-[#1e272e] rounded-t-2xl overflow-hidden space-y-3 p-2 sm:p-4">
       <style jsx global>{`
         /* Hide default EmulatorJS control bar if EJS_hideButtonBar fails in some versions */
         #emulator-game .ejs--control-bar,
-        #emulator-game .ejs--controls,
-        #emulator-game .ejs--bottom-bar,
-        #emulator-game > div:nth-child(2) {
+        #emulator-game .ejs--bottom-bar {
           display: none !important;
           opacity: 0 !important;
           pointer-events: none !important;
@@ -113,8 +103,8 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
         }
         #emulator-game canvas {
           width: 100% !important;
-          height: auto !important;
-          max-height: 70vh !important;
+          height: 100% !important;
+          object-fit: contain !important;
           margin: 0 auto !important;
           display: block !important;
         }
@@ -122,10 +112,9 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
       <div
         id="emulator-game"
         ref={containerRef}
-        className="w-full overflow-hidden flex items-center justify-center bg-black"
-        style={{ minHeight: '420px', maxHeight: '70vh' }}
+        className="relative w-full border-[3px] border-[#231f20] rounded-xl overflow-hidden bg-black shadow-[4px_4px_0px_#231f20] h-[75vh] sm:h-[650px] min-h-[320px] max-h-[85vh] flex items-center justify-center"
       />
-      <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold border-t border-white/10">
+      <div className="bg-[#111418] text-[#f8f6ed] p-2 text-center text-xs font-bold rounded-xl border border-white/10">
         <p>Mẹo: Dùng thanh công cụ phía dưới để Lưu/Tải Game hoặc đổi phím điều khiển!</p>
       </div>
     </div>
