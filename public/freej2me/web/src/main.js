@@ -13,39 +13,76 @@ import jsReferenceNatives from "../libjs/libjsreference.js";
 import mediaBridgeNatives from "../libjs/libmediabridge.js";
 import midiBridgeNatives from "../libjs/libmidibridge.js";
 
-// [Global Cache Resilience Patch] Prevents net::ERR_CACHE_OPERATION_NOT_SUPPORTED crashes in Edge/Chrome/Safari
+// [Universal Cache Resilience & Anti-Crash Patch] Eliminates net::ERR_CACHE_OPERATION_NOT_SUPPORTED in CheerpJ XHR & Fetch
 (function() {
-    if (typeof window === 'undefined') return;
-    if (window.fetch && !window._cheerpjCachePatched) {
-        window._cheerpjCachePatched = true;
+    if (typeof window === 'undefined' || window._cheerpjUniversalPatched) return;
+    window._cheerpjUniversalPatched = true;
+    window._cheerpjSessionId = Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+
+    // 1. Patch XMLHttpRequest (XHR) - Used by cheerpOS.js ddlSend for JRE libraries!
+    if (window.XMLHttpRequest) {
+        const origXhrOpen = XMLHttpRequest.prototype.open;
+        const origXhrSend = XMLHttpRequest.prototype.send;
+        
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            this._method = method;
+            this._url = url;
+            if (typeof url === 'string' && (url.includes('leaningtech.com') || url.includes('.jar') || url.includes('/jre/') || url.includes('/lib/'))) {
+                const sep = url.includes('?') ? '&' : '?';
+                if (!url.includes('_cb=')) {
+                    url = url + sep + '_cb=' + window._cheerpjSessionId;
+                    this._url = url;
+                }
+            }
+            return origXhrOpen.call(this, method, url, ...rest);
+        };
+
+        XMLHttpRequest.prototype.send = function(...args) {
+            const xhr = this;
+            if (xhr._url && typeof xhr._url === 'string' && (xhr._url.includes('leaningtech.com') || xhr._url.includes('.jar') || xhr._url.includes('/jre/'))) {
+                xhr.addEventListener('error', function(e) {
+                    console.warn('[CheerpJ XHR Anti-Crash] XHR network/cache error intercepted for:', xhr._url, e);
+                });
+            }
+            return origXhrSend.apply(this, args);
+        };
+    }
+
+    // 2. Patch window.fetch
+    if (window.fetch) {
         const origFetch = window.fetch;
         window.fetch = async function(resource, init) {
             let opts = init ? Object.assign({}, init) : {};
-            if (opts && opts.cache && (typeof resource === 'string' && resource.includes('leaningtech.com') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
+            let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
+            
+            if (opts && opts.cache && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
                 delete opts.cache;
             }
+            if (urlStr && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/'))) {
+                const sep = urlStr.includes('?') ? '&' : '?';
+                if (!urlStr.includes('_cb=')) {
+                    urlStr = urlStr + sep + '_cb=' + window._cheerpjSessionId;
+                }
+            }
             try {
-                return await origFetch.call(this, resource, opts);
+                return await origFetch.call(this, urlStr || resource, opts);
             } catch (err) {
                 const errStr = (err ? err.message || err.toString() || '' : '').toUpperCase();
                 if (errStr.includes('CACHE') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
-                    console.warn('[CheerpJ Anti-Crash] Fetch failed due to cache restriction, retrying in clean mode:', resource, err);
+                    console.warn('[CheerpJ Fetch Anti-Crash] Retrying in no-store mode:', urlStr, err);
                     let cleanOpts = Object.assign({}, init || {});
                     delete cleanOpts.cache;
                     delete cleanOpts.integrity;
                     cleanOpts.cache = 'no-store';
-                    try {
-                        return await origFetch.call(this, resource, cleanOpts);
-                    } catch (retryErr) {
-                        let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
-                        let sep = urlStr.includes('?') ? '&' : '?';
-                        return await origFetch.call(this, urlStr + sep + '_nocache=' + Date.now(), cleanOpts);
-                    }
+                    const sep = urlStr.includes('?') ? '&' : '?';
+                    return await origFetch.call(this, urlStr + sep + '_retry=' + Date.now(), cleanOpts);
                 }
                 throw err;
             }
         };
     }
+
+    // 3. Patch window.caches (Cache Storage API)
     if (window.caches && window.caches.open) {
         const origOpen = window.caches.open;
         window.caches.open = async function(...args) {
@@ -70,7 +107,7 @@ import midiBridgeNatives from "../libjs/libmidibridge.js";
                 }
                 return cache;
             } catch (e) {
-                console.warn('[CheerpJ Cache Open Bypassed] Cache storage restricted or unsupported:', e);
+                console.warn('[CheerpJ Cache Open Bypassed] Storage restricted by browser:', e);
                 return {
                     match: async () => undefined,
                     matchAll: async () => [],
