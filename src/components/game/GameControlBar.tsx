@@ -107,9 +107,8 @@ export default function GameControlBar({
       {toast && (
         <div className="fixed top-24 right-6 z-50 animate-bounce">
           <div
-            className={`px-5 py-3 rounded-xl border-[3px] border-[#231f20] shadow-[4px_4px_0px_#231f20] font-black text-sm text-white ${
-              toast.type === 'success' ? 'bg-[#2ed573]' : 'bg-[#ff4757]'
-            }`}
+            className={`px-5 py-3 rounded-xl border-[3px] border-[#231f20] shadow-[4px_4px_0px_#231f20] font-black text-sm text-white ${toast.type === 'success' ? 'bg-[#2ed573]' : 'bg-[#ff4757]'
+              }`}
           >
             {toast.message}
           </div>
@@ -118,7 +117,7 @@ export default function GameControlBar({
 
       {/* Control Toolbar */}
       <div className="bg-[#231f20] border-[3px] border-[#231f20] rounded-b-2xl p-3 px-4 sm:px-6 shadow-[6px_6px_0px_#231f20] flex flex-wrap items-center justify-between gap-3 text-white">
-        
+
         {/* Left: Save/Load State (GBA Only) or Engine Label (JAR) */}
         <div className="flex items-center gap-2 flex-wrap">
           {platform === 'GBA' ? (
@@ -166,12 +165,11 @@ export default function GameControlBar({
           >
             <span>Đổi Phím</span>
           </button>
-          
+
           <button
             onClick={onToggleGamepad}
-            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1 ${
-              isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-            }`}
+            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase border-2 border-white/20 shadow-[2px_2px_0px_rgba(0,0,0,0.5)] active:translate-y-0.5 transition-all flex items-center gap-1 ${isGamepadVisible ? 'bg-[#ff4757] text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+              }`}
           >
             <span>Nút Ảo: {isGamepadVisible ? 'Bật' : 'Tắt'}</span>
           </button>

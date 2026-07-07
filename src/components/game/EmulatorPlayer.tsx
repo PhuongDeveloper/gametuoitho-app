@@ -49,13 +49,9 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
       fullscreen: false,
       saveState: false,
       loadState: false,
-      screenRecord: false,
       gamepad: false,
       cheat: false,
       volume: false,
-      saveSavFiles: false,
-      loadSavFiles: false,
-      fastForward: false,
     };
 
     // Load EmulatorJS script

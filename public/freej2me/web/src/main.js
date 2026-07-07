@@ -23,7 +23,7 @@ let isMobile = sp.get('mobile');
 let display = null;
 let screenCtx = null;
 
-let fractionScale = sp.get('fractionScale') || (localStorage && localStorage.getItem("pl.zb3.freej2me.fractionScale") === "true");
+let fractionScale = true; // Always enable smooth fractional scaling for best screen utilization
 let scaleSet = false;
 
 const keyRepeatManager = new KeyRepeatManager();
@@ -74,19 +74,24 @@ function setListeners() {
 
     function handleKeyEvent(e) {
         const isDown = e.type === 'keydown';
+        const code = e.code || e.key;
 
-        if (codeMap[e.code]) {
-            keyRepeatManager.post(isDown, e.code, {
-                symbol: e.key.length == 1 ? e.key.charCodeAt(0) : '\x00',
+        if (codeMap[code]) {
+            keyRepeatManager.post(isDown, code, {
+                symbol: e.key && e.key.length == 1 ? e.key.charCodeAt(0) : '\x00',
                 ctrlKey: e.ctrlKey,
                 shiftKey: e.shiftKey
-            })
+            });
         }
         e.preventDefault();
     }
 
     display.addEventListener('keydown', handleKeyEvent);
     display.addEventListener('keyup', handleKeyEvent);
+    window.addEventListener('keydown', handleKeyEvent);
+    window.addEventListener('keyup', handleKeyEvent);
+    document.addEventListener('keydown', handleKeyEvent);
+    document.addEventListener('keyup', handleKeyEvent);
 
     keyRepeatManager.register((kind, key, args) => {
         if (kind === 'click') {

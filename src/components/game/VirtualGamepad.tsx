@@ -46,8 +46,8 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
           LEFT: 'ArrowLeft',
           RIGHT: 'ArrowRight',
           FIRE: 'Enter',
-          SOFT_LEFT: 'KeyQ',
-          SOFT_RIGHT: 'KeyW',
+          SOFT_LEFT: 'F1',
+          SOFT_RIGHT: 'F2',
           KEY_1: 'Digit1',
           KEY_2: 'Digit2',
           KEY_3: 'Digit3',
@@ -58,8 +58,8 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
           KEY_8: 'Digit8',
           KEY_9: 'Digit9',
           KEY_0: 'Digit0',
-          KEY_STAR: '8', // *
-          KEY_POUND: '3', // #
+          KEY_STAR: 'NumpadMultiply', // *
+          KEY_POUND: 'NumpadDivide', // #
         });
       }
     }
@@ -72,9 +72,23 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
     setActiveKeys((prev) => ({ ...prev, [btnName]: isDown }));
 
     const eventType = isDown ? 'keydown' : 'keyup';
+    let keyChar = code.startsWith('Key') ? code.replace('Key', '') : code.startsWith('Digit') ? code.replace('Digit', '') : code;
+    if (code === 'NumpadMultiply' || code === 'NumpadAsterisk') keyChar = '*';
+    if (code === 'NumpadDivide') keyChar = '#';
+
+    const keyCodeMap: Record<string, number> = {
+      ArrowUp: 38, ArrowDown: 40, ArrowLeft: 37, ArrowRight: 39,
+      Enter: 13, F1: 112, F2: 113, Backspace: 8, Escape: 27, Space: 32,
+      Digit0: 48, Digit1: 49, Digit2: 50, Digit3: 51, Digit4: 52, Digit5: 53, Digit6: 54, Digit7: 55, Digit8: 56, Digit9: 57,
+      NumpadMultiply: 106, NumpadAsterisk: 106, NumpadDivide: 111, KeyZ: 90, KeyX: 88, KeyA: 65, KeyS: 83, KeyQ: 81, KeyW: 87,
+    };
+    const keyCodeVal = keyCodeMap[code] || 0;
+
     const eventObj = new KeyboardEvent(eventType, {
       code: code,
-      key: code.replace('Key', '').replace('Digit', '').replace('Arrow', ''),
+      key: keyChar,
+      keyCode: keyCodeVal,
+      which: keyCodeVal,
       bubbles: true,
       cancelable: true,
     });
@@ -84,14 +98,23 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
     document.dispatchEvent(eventObj);
 
     // Also dispatch into iframe if present (for JAR/J2ME)
-    const iframe = document.querySelector('iframe');
-    if (iframe && iframe.contentWindow) {
+    const iframes = document.querySelectorAll('iframe');
+    iframes.forEach((iframe) => {
       try {
-        iframe.contentWindow.dispatchEvent(eventObj);
+        if (iframe.contentWindow) {
+          iframe.contentWindow.dispatchEvent(eventObj);
+        }
+        if (iframe.contentDocument) {
+          iframe.contentDocument.dispatchEvent(eventObj);
+          const displayEl = iframe.contentDocument.getElementById('display') || iframe.contentDocument.querySelector('canvas');
+          if (displayEl) {
+            displayEl.dispatchEvent(eventObj);
+          }
+        }
       } catch (e) {
-        // CORS might prevent direct access if external, but freej2me/j2me.js handles window events
+        // CORS might prevent direct access if external
       }
-    }
+    });
 
     // For EmulatorJS internal engine if accessible
     if (platform === 'GBA' && (window as any).EJS_emulator) {
@@ -110,10 +133,10 @@ export default function VirtualGamepad({ platform, visible = true, onClose }: Vi
   const defaultJarCode = (btn: string) => {
     const map: Record<string, string> = {
       UP: 'ArrowUp', DOWN: 'ArrowDown', LEFT: 'ArrowLeft', RIGHT: 'ArrowRight',
-      FIRE: 'Enter', SOFT_LEFT: 'KeyQ', SOFT_RIGHT: 'KeyW',
+      FIRE: 'Enter', SOFT_LEFT: 'F1', SOFT_RIGHT: 'F2',
       KEY_1: 'Digit1', KEY_2: 'Digit2', KEY_3: 'Digit3', KEY_4: 'Digit4',
       KEY_5: 'Digit5', KEY_6: 'Digit6', KEY_7: 'Digit7', KEY_8: 'Digit8',
-      KEY_9: 'Digit9', KEY_0: 'Digit0',
+      KEY_9: 'Digit9', KEY_0: 'Digit0', KEY_STAR: 'NumpadMultiply', KEY_POUND: 'NumpadDivide'
     };
     return map[btn] || 'Enter';
   };
