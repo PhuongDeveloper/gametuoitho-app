@@ -281,11 +281,14 @@ function setListeners() {
         const isDown = e.type === 'keydown';
         const code = e.code || e.key;
 
-        if (codeMap[code]) {
+        // Forward ALL key events to game (required for key rebinding dialogs)
+        const mappedCode = codeMap[code] || e.keyCode || e.which || 0;
+        if (mappedCode) {
             keyRepeatManager.post(isDown, code, {
                 symbol: e.key && e.key.length == 1 ? e.key.charCodeAt(0) : '\x00',
                 ctrlKey: e.ctrlKey,
-                shiftKey: e.shiftKey
+                shiftKey: e.shiftKey,
+                rawKeyCode: mappedCode
             });
         }
         e.preventDefault();
@@ -305,11 +308,13 @@ function setListeners() {
                 localStorage && localStorage.setItem("pl.zb3.freej2me.fractionScale", fractionScale);
                 autoscale();
             }
-        } else if (codeMap[key]) {
-            console.log('queuin event');
+        }
+        // Forward ALL key events to game (use codeMap or rawKeyCode fallback for key rebinding support)
+        const keyCode = codeMap[key] || args.rawKeyCode || 0;
+        if (keyCode && (kind === 'down' || kind === 'up' || kind === 'repeat')) {
             evtQueue.queueEvent({
                 kind: kind === 'up' ? 'keyup' : 'keydown',
-                args: [codeMap[key], args.symbol, args.ctrlKey, args.shiftKey]
+                args: [keyCode, args.symbol, args.ctrlKey, args.shiftKey]
             });
         }
     });
