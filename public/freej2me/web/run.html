@@ -88,17 +88,25 @@
                 };
             }
 
-            // B. Patch fetch
+            // B. Patch fetch (CRITICAL: Chromium throws ERR_CACHE_OPERATION_NOT_SUPPORTED on Range requests unless cache: 'no-store' is explicitly set!)
             if (targetScope.fetch) {
                 const origFetch = targetScope.fetch;
                 targetScope.fetch = async function(resource, init) {
                     let opts = init ? Object.assign({}, init) : {};
-                    let urlStr = typeof resource === 'string' ? resource : (resource ? resource.url || resource.toString() : '');
+                    let urlStr = typeof resource === 'string' ? resource : (resource && resource.url ? resource.url : (resource ? resource.toString() : ''));
                     
-                    if (opts && opts.cache && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/') || opts.cache === 'only-if-cached' || opts.cache === 'force-cache')) {
-                        delete opts.cache;
+                    if (resource && typeof resource === 'object' && resource.url) {
+                        if (!opts.method && resource.method) opts.method = resource.method;
+                        if (!opts.headers && resource.headers) opts.headers = resource.headers;
+                        if (!opts.mode && resource.mode) opts.mode = resource.mode;
+                        if (!opts.credentials && resource.credentials) opts.credentials = resource.credentials;
                     }
-                    if (urlStr && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/'))) {
+
+                    if (urlStr && (urlStr.includes('leaningtech.com') || urlStr.includes('.jar') || urlStr.includes('/jre/') || urlStr.includes('/lib/') || urlStr.includes('/app/'))) {
+                        // 1. MUST FORCE no-store to prevent Chromium disk cache collision on Range requests
+                        opts.cache = 'no-store';
+
+                        // 2. MUST APPEND cache buster
                         const sep = urlStr.includes('?') ? '&' : '?';
                         if (!urlStr.includes('_cb=')) {
                             urlStr = urlStr + sep + '_cb=' + targetScope._cheerpjSessionId;
@@ -108,11 +116,9 @@
                         return await origFetch.call(this, urlStr || resource, opts);
                     } catch (err) {
                         const errStr = (err ? err.message || err.toString() || '' : '').toUpperCase();
-                        if (errStr.includes('CACHE') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
-                            console.warn('[CheerpJ Fetch Anti-Crash] Retrying cleanly:', urlStr, err);
-                            let cleanOpts = Object.assign({}, init || {});
-                            delete cleanOpts.cache;
-                            delete cleanOpts.integrity;
+                        if (errStr.includes('CACHE') || errStr.includes('OPERATION_NOT_SUPPORTED') || err.name === 'TypeError' || err.name === 'DOMException' || err.name === 'NetworkError') {
+                            console.warn('[CheerpJ Fetch Anti-Crash] Retrying cleanly with no-store:', urlStr, err);
+                            let cleanOpts = Object.assign({}, opts);
                             cleanOpts.cache = 'no-store';
                             const sep = urlStr.includes('?') ? '&' : '?';
                             return await origFetch.call(this, urlStr + sep + '_retry=' + Date.now(), cleanOpts);
