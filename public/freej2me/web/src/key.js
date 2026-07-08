@@ -63,6 +63,57 @@ export const codeMap = {
     'KeyZ': 90,
 };
 
+function loadUserKeyBindings() {
+    try {
+        const saved = localStorage.getItem('keybindings_JAR');
+        if (saved) {
+            const bindings = JSON.parse(saved);
+            
+            // J2ME standard VK codes expected by FreeJ2ME
+            const J2ME_VK = {
+                'UP': 38,
+                'DOWN': 40,
+                'LEFT': 37,
+                'RIGHT': 39,
+                'FIRE': 13,
+                'SOFT_LEFT': 81, // VK_Q
+                'SOFT_RIGHT': 87, // VK_W
+                'KEY_1': 49,
+                'KEY_2': 50,
+                'KEY_3': 51,
+                'KEY_4': 52,
+                'KEY_5': 53,
+                'KEY_6': 54,
+                'KEY_7': 55,
+                'KEY_8': 56,
+                'KEY_9': 57,
+                'KEY_0': 48,
+                'KEY_STAR': 69, // VK_E
+                'KEY_POUND': 82, // VK_R
+            };
+
+            for (const [j2meKey, jsCode] of Object.entries(bindings)) {
+                if (J2ME_VK[j2meKey] !== undefined) {
+                    codeMap[jsCode] = J2ME_VK[j2meKey];
+                }
+            }
+            console.log("[FreeJ2ME] Loaded user keybindings", bindings);
+        }
+    } catch (e) {
+        console.error("Error loading keybindings", e);
+    }
+}
+
+// Initial load
+loadUserKeyBindings();
+
+// Listen for cross-frame storage changes (when user saves from React modal)
+window.addEventListener('storage', (e) => {
+    if (e.key === 'keybindings_JAR') {
+        loadUserKeyBindings();
+    }
+});
+
 
 
 export class KeyRepeatManager {
