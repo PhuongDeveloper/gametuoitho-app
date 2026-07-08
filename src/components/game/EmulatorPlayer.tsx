@@ -76,7 +76,6 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
           <iframe
             src={`/freej2me/web/run.html?url=${encodeURIComponent(game.file_url)}`}
             className="absolute inset-0 w-full h-full border-0 bg-black"
-            style={{ transform: 'translateZ(0)', willChange: 'transform', backfaceVisibility: 'hidden' }}
             allow="gamepad; autoplay; fullscreen"
             title={`Play ${game.title}`}
           />
@@ -107,9 +106,6 @@ export default function EmulatorPlayer({ game }: EmulatorPlayerProps) {
           image-rendering: -webkit-optimize-contrast !important;
           image-rendering: pixelated !important;
           image-rendering: crisp-edges !important;
-          transform: translateZ(0) !important;
-          will-change: transform, contents !important;
-          backface-visibility: hidden !important;
         }
       `}</style>
       <div

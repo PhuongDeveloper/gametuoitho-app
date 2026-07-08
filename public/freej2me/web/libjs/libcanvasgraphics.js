@@ -1,108 +1,15 @@
-function instrument(nob) {
-  const newobj = {};
+// Performance: Use OffscreenCanvas for temporary drawing operations when available
+// This avoids DOM-attached canvas overhead and is faster on most browsers
+const ctx = (typeof OffscreenCanvas !== 'undefined')
+    ? new OffscreenCanvas(10, 10).getContext('2d')
+    : document.createElement('canvas').getContext('2d');
+let _ctxW = 10, _ctxH = 10;
 
-  for (const kn of Object.keys(nob)) {
-    newobj[kn] = async function() {
-      console.log('[callet]', kn, arguments);
-      return nob[kn].apply(this, arguments);
-    };
-  }
-
-  return newobj;
+// Avoid unnecessary canvas resize (each resize forces GPU buffer reallocation)
+function ensureCtxSize(w, h) {
+    if (_ctxW !== w) { ctx.canvas.width = w; _ctxW = w; }
+    if (_ctxH !== h) { ctx.canvas.height = h; _ctxH = h; }
 }
-
-
-
-/*
-whoops.. some of these are async
-if another thread uses this dummy canvas, bad things might happen
-
-not impossible, since threds might work on different images
-lock could wait on a promise
-should unlock resolve it in a microtask?
-*/
-function createReentryWarningWrapper(obj) {
-  const functionStates = {};
-  const wrappedFunctions = {}; // Store wrapped functions
-
-  for (const prop in obj) {
-    if (typeof obj[prop] === 'function') {
-      const originalFunction = obj[prop];
-
-      wrappedFunctions[prop] = async function (...args) {
-        const functionKey = prop;
-
-        if (functionStates[functionKey] === 'running') {
-          console.warn(`Warning: Function "${prop}" reentered.`);
-        }
-
-        functionStates[functionKey] = 'running';
-
-        try {
-          const result = await originalFunction.apply(this, args);
-          functionStates[functionKey] = 'completed';
-          return result;
-        } catch (error) {
-          functionStates[functionKey] = 'completed';
-          throw error;
-        } finally {
-            if(functionStates[functionKey] === 'completed')
-            delete functionStates[functionKey];
-        }
-      };
-    }
-  }
-
-  return new Proxy(obj, {
-    get: function (target, prop, receiver) {
-      return wrappedFunctions[prop] || target[prop]; // Return wrapped function or original property
-    },
-  });
-}
-
-
-function createSerializedWrapper(methodsObject) {
-  let currentTask = null;
-
-  const wrapper = {};
-
-  for (const methodName of Object.keys(methodsObject)) {
-    if (typeof methodsObject[methodName] !== "function") {
-      continue;
-    }
-
-    const originalMethod = methodsObject[methodName];
-
-    wrapper[methodName] = async (...args) => {
-      while (currentTask) {
-        await currentTask;
-        // by the time await returns, another function might have already
-        // set currentTask again
-        // so we need to verify there's no currentTask while we're executing
-        // exclusively synchronously
-
-        // however, the order is actually not guaranteed
-        // but we don't care about it here
-      }
-
-      const task = originalMethod.apply(methodsObject, args);
-      currentTask = task.catch(x => true);
-
-      try {
-        return await task;
-      } finally {
-        currentTask = null;
-      }
-    };
-  }
-
-  return wrapper;
-}
-
-
-const ctx = document.createElement('canvas').getContext('2d');
-ctx.canvas.width = 10; ctx.canvas.height = 10;
-//document.body.appendChild(ctx.canvas);
 
 async function transformBitmapOrCanvas(src, sx, sy, sw, sh, a90, mirror) {
   if (a90 == 0 && !mirror) {
@@ -110,21 +17,22 @@ async function transformBitmapOrCanvas(src, sx, sy, sw, sh, a90, mirror) {
   }
 
   const swap = a90 & 1;
+  const cw = swap ? sh : sw;
+  const ch = swap ? sw : sh;
 
-  ctx.canvas.width = swap ? sh : sw;
-  ctx.canvas.height = swap ? sw : sh;
+  ensureCtxSize(cw, ch);
 
   ctx.save();
   if (a90 || mirror) {
-    ctx.translate(ctx.canvas.width/2, ctx.canvas.height/2);
+    ctx.translate(cw/2, ch/2);
     if (mirror) {
       ctx.scale(swap ? 1 : -1, swap ? -1 : 1);
     }
     ctx.rotate(a90 * 90 * Math.PI / 180);
     if (swap) {
-      ctx.translate(-ctx.canvas.height/2, -ctx.canvas.width/2);
+      ctx.translate(-ch/2, -cw/2);
     } else {
-      ctx.translate(-ctx.canvas.width/2, -ctx.canvas.height/2);
+      ctx.translate(-cw/2, -ch/2);
     }
   }
   ctx.drawImage(src, sx, sy, sw, sh, 0, 0, sw, sh);
@@ -144,12 +52,9 @@ function castToInt8(uint8) {
 
 const CanvasImage = {
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_bitmapFromColor(lib, width, height, r, g, b, a) {
-    ctx.canvas.width = width; ctx.canvas.height = height;
-
-    // ctx.clearRect(0, 0, width, height); // width always resets it.. I guess
+    ensureCtxSize(width, height);
     ctx.fillStyle = `rgba(${r} ${g} ${b} / ${a/255})`;
     ctx.fillRect(0, 0, width, height);
-
     return await createImageBitmap(ctx.canvas);
   },
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_bitmapFromBytes(lib, bytes, result) {
@@ -168,32 +73,21 @@ const CanvasImage = {
     return await transformBitmapOrCanvas(bmp, sx, sy, sw, sh, a90, mirror);
   },
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_bitmapFromRGBAData(lib, rgba, width, height) {
-    ctx.canvas.width = width; ctx.canvas.height = height;
-
+    ensureCtxSize(width, height);
     const imageData = new ImageData(castToUint8Clamped(rgba), width, height);
-
     ctx.putImageData(imageData, 0, 0);
     return await createImageBitmap(ctx.canvas);
   },
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_getRGBAFromBitmap(lib, bmp, sx, sy, width, height) {
-    ctx.canvas.width = width; ctx.canvas.height = height;
+    ensureCtxSize(width, height);
     ctx.drawImage(bmp, sx, sy, width, height, 0, 0, width, height);
-
-    const imageData = ctx.getImageData(0, 0, width, height);
-
-    return castToInt8(imageData.data);
+    return castToInt8(ctx.getImageData(0, 0, width, height).data);
   },
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_setRGBAToBitmap(lib, bmp, rgbaData, x, y, width, height) {
-    // set is not draw, we clear the region
-    // but putImageData doesn't blend
-    ctx.canvas.width = bmp.width; ctx.canvas.height = bmp.height;
+    ensureCtxSize(bmp.width, bmp.height);
     ctx.drawImage(bmp, 0, 0);
-
-    const imageData = new ImageData(castToUint8Clamped(rgbaData), width, height);
-    ctx.putImageData(imageData, x, y);
-
+    ctx.putImageData(new ImageData(castToUint8Clamped(rgbaData), width, height), x, y);
     bmp.close();
-
     return await createImageBitmap(ctx.canvas);
   },
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasImage_closeBitmap(lib, bmp) {
@@ -250,8 +144,7 @@ const CanvasGraphics = ({
 
   async Java_pl_zb3_freej2me_bridge_graphics_CanvasGraphics_drawRGBAData(lib, targetCtx, rgba, width, height, x, y, blend) {
     if (blend) {
-      // this is not putImageData, we need to blend here
-      ctx.canvas.width = width; ctx.canvas.height = height;
+      ensureCtxSize(width, height);
       ctx.putImageData(new ImageData(castToUint8Clamped(rgba), width, height), 0, 0);
       targetCtx.drawImage(ctx.canvas, x, y);
     } else {

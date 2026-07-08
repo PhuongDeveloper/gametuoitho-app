@@ -281,7 +281,6 @@ function setListeners() {
         const isDown = e.type === 'keydown';
         const code = e.code || e.key;
 
-        // Forward ALL key events to game (required for key rebinding dialogs)
         const mappedCode = codeMap[code] || e.keyCode || e.which || 0;
         if (mappedCode) {
             keyRepeatManager.post(isDown, code, {
@@ -290,16 +289,13 @@ function setListeners() {
                 shiftKey: e.shiftKey,
                 rawKeyCode: mappedCode
             });
+            e.preventDefault();
         }
-        e.preventDefault();
     }
 
-    display.addEventListener('keydown', handleKeyEvent);
-    display.addEventListener('keyup', handleKeyEvent);
+    // Single listener on window only - avoids triple-processing every keystroke
     window.addEventListener('keydown', handleKeyEvent);
     window.addEventListener('keyup', handleKeyEvent);
-    document.addEventListener('keydown', handleKeyEvent);
-    document.addEventListener('keyup', handleKeyEvent);
 
     keyRepeatManager.register((kind, key, args) => {
         if (kind === 'click') {
@@ -400,17 +396,9 @@ function setListeners() {
         e.preventDefault();
     });
 
-    document.addEventListener('mousedown', e => {
-        console.log('refocus');
-        setTimeout(() => display.focus(), 20);
-        ;
-    });
-
-    display.addEventListener('blur', e => {
-        console.log('refocus');
-        // it doesn't work without any timeout
-        setTimeout(() => display.focus(), 10);
-        ;
+    // Focus display on click (non-aggressive, no blur loop)
+    document.addEventListener('mousedown', () => {
+        if (document.activeElement !== display) display.focus();
     });
 
     window.addEventListener('resize', autoscale);
