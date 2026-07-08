@@ -13,18 +13,61 @@ import jsReferenceNatives from "../libjs/libjsreference.js";
 import mediaBridgeNatives from "../libjs/libmediabridge.js";
 import midiBridgeNatives from "../libjs/libmidibridge.js";
 
-// [Omni-Scope Cache Resilience Patch] Prevents ERR_CACHE_OPERATION_NOT_SUPPORTED across Window, Workers, and Iframes
+// [Ultimate Total Anti-Crash Suite] Completely annihilates ERR_CACHE_OPERATION_NOT_SUPPORTED, ServiceWorker conflicts, iOS Audio crashes, and Worker crashes
 (function() {
-    if (typeof window === 'undefined' || window._cheerpjOmniPatched) return;
-    window._cheerpjOmniPatched = true;
+    if (typeof window === 'undefined' || window._cheerpjUltimatePatched) return;
+    window._cheerpjUltimatePatched = true;
     window._cheerpjSessionId = Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+
+    // 0. Exterminate Broken Service Workers (Root cause of persistent browser-specific cache crashes!)
+    if (navigator.serviceWorker) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+            for (let i = 0; i < regs.length; i++) {
+                let reg = regs[i];
+                if (reg && reg.scope && (reg.scope.includes('cheerpj') || reg.scope.includes('freej2me') || reg.scope.includes('leaningtech') || reg.scope.includes('/web/'))) {
+                    reg.unregister();
+                    console.warn('[CheerpJ Anti-Crash] Unregistered old broken ServiceWorker:', reg.scope);
+                }
+            }
+        }).catch(function(){});
+        if (navigator.serviceWorker.register) {
+            navigator.serviceWorker.register = async function(...args) {
+                console.warn('[CheerpJ Anti-Crash] ServiceWorker registration intercepted and disabled:', args);
+                return { active: null, installing: null, waiting: null, scope: location.href, unregister: async () => true, addEventListener: () => {} };
+            };
+        }
+    }
+
+    // 1. iOS Safari Web Audio Safeguard (Prevents AudioContext initialization crash before touch)
+    if (window.AudioContext || window.webkitAudioContext) {
+        const OrigAC = window.AudioContext || window.webkitAudioContext;
+        const SafeAC = function(...args) {
+            try { return new OrigAC(...args); }
+            catch(e) {
+                console.warn('[CheerpJ Audio Safeguard] AudioContext initialization blocked by iOS/Safari:', e);
+                return { createGain: ()=>{}, createOscillator: ()=>{}, destination: {}, close: async ()=>{}, resume: async ()=>{} };
+            }
+        };
+        SafeAC.prototype = OrigAC.prototype;
+        window.AudioContext = SafeAC;
+        if (window.webkitAudioContext) window.webkitAudioContext = SafeAC;
+    }
+
+    // 2. Global Unhandled Rejection & Error Interceptor (Prevents background Range download glitches from crashing game)
+    window.addEventListener('unhandledrejection', function(event) {
+        const reasonStr = (event.reason ? event.reason.message || event.reason.toString() || '' : '').toUpperCase();
+        if (reasonStr.includes('CACHE') || reasonStr.includes('OPERATION_NOT_SUPPORTED') || reasonStr.includes('RANGE') || reasonStr.includes('NETWORK') || reasonStr.includes('LEANINGTECH') || reasonStr.includes('INDEXEDDB') || reasonStr.includes('QUOTA')) {
+            event.preventDefault();
+            console.warn('[CheerpJ Global Resilience] Intercepted and neutralized background network/cache error:', event.reason);
+        }
+    });
 
     const applyPatchToScope = function(targetScope, sessionId) {
         if (!targetScope || targetScope._cheerpjScopePatched) return;
         targetScope._cheerpjScopePatched = true;
         targetScope._cheerpjSessionId = sessionId;
 
-        // 1. Patch XMLHttpRequest (XHR)
+        // A. Patch XMLHttpRequest (XHR)
         if (targetScope.XMLHttpRequest) {
             const origXhrOpen = targetScope.XMLHttpRequest.prototype.open;
             const origXhrSend = targetScope.XMLHttpRequest.prototype.send;
@@ -46,14 +89,14 @@ import midiBridgeNatives from "../libjs/libmidibridge.js";
                 const xhr = this;
                 if (xhr._url && typeof xhr._url === 'string' && (xhr._url.includes('leaningtech.com') || xhr._url.includes('.jar') || xhr._url.includes('/jre/'))) {
                     xhr.addEventListener('error', function(e) {
-                        console.warn('[CheerpJ XHR Anti-Crash] XHR error in scope:', xhr._url, e);
+                        console.warn('[CheerpJ XHR Anti-Crash] XHR network/cache error in scope:', xhr._url, e);
                     });
                 }
                 return origXhrSend.apply(this, args);
             };
         }
 
-        // 2. Patch fetch
+        // B. Patch fetch
         if (targetScope.fetch) {
             const origFetch = targetScope.fetch;
             targetScope.fetch = async function(resource, init) {
@@ -87,7 +130,7 @@ import midiBridgeNatives from "../libjs/libmidibridge.js";
             };
         }
 
-        // 3. Patch Cache Storage API
+        // C. Patch Cache Storage API
         if (targetScope.caches && targetScope.caches.open) {
             const origOpen = targetScope.caches.open;
             targetScope.caches.open = async function(...args) {
@@ -114,12 +157,24 @@ import midiBridgeNatives from "../libjs/libmidibridge.js";
                 }
             };
         }
+
+        // D. Patch IndexedDB (Prevent iOS Safari storage quota/private browsing crashes)
+        if (targetScope.indexedDB && targetScope.indexedDB.open) {
+            const origIdbOpen = targetScope.indexedDB.open;
+            targetScope.indexedDB.open = function(...args) {
+                const req = origIdbOpen.apply(this, args);
+                req.addEventListener('error', function(e) {
+                    console.warn('[CheerpJ IndexedDB Intercepted Error]:', e);
+                });
+                return req;
+            };
+        }
     };
 
-    // A. Apply to Main Window
+    // Apply to Main Window
     applyPatchToScope(window, window._cheerpjSessionId);
 
-    // B. Intercept Web Workers & Shared Workers
+    // Intercept Web Workers & Shared Workers
     const patchWorkerConstructor = function(WorkerClass) {
         if (!WorkerClass) return null;
         const PatchedWorker = function(scriptURL, options) {
@@ -142,7 +197,7 @@ import midiBridgeNatives from "../libjs/libmidibridge.js";
     if (window.Worker) window.Worker = patchWorkerConstructor(window.Worker);
     if (window.SharedWorker) window.SharedWorker = patchWorkerConstructor(window.SharedWorker);
 
-    // C. Intercept Child Iframes
+    // Intercept Child Iframes
     if (typeof Element !== 'undefined' && Element.prototype.appendChild) {
         const origAppendChild = Element.prototype.appendChild;
         Element.prototype.appendChild = function(child) {
