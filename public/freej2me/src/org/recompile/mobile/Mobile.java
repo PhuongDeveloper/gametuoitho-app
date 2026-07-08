@@ -263,7 +263,7 @@ public class Mobile
 			case KeyEvent.VK_H: return Mobile.XKEY_SOFT3;
 
 		}
-		return 0;
+		return keycode; // Fallback to raw keycode instead of 0 to support custom key rebinding
 	}
 
 	public static MobilePlatform getPlatform()
