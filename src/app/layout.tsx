@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import SideAdBanners from '@/components/layout/SideAdBanners';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'GameTuoiTho.online - Trò chơi tuổi thơ | GBA & Java Online',
@@ -37,6 +38,12 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="theme-color" content="#d63031" />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8385412892999149"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body id="top" className="antialiased min-h-screen flex flex-col justify-between">
         <Header />
