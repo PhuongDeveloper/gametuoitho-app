@@ -68,7 +68,7 @@ function loadUserKeyBindings() {
         const saved = localStorage.getItem('keybindings_JAR');
         if (saved) {
             const bindings = JSON.parse(saved);
-            
+
             // J2ME standard VK codes expected by FreeJ2ME
             const J2ME_VK = {
                 'UP': 38,
@@ -89,7 +89,7 @@ function loadUserKeyBindings() {
                 'KEY_9': 57,
                 'KEY_0': 48,
                 'KEY_STAR': 69, // VK_E
-                'KEY_POUND': 82, // VK_R
+                'KEY_POUND': 82, // VK_R   
             };
 
             for (const [j2meKey, jsCode] of Object.entries(bindings)) {
