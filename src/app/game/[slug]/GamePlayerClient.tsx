@@ -8,6 +8,7 @@ import GameControlBar from '@/components/game/GameControlBar';
 import VirtualGamepad from '@/components/game/VirtualGamepad';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import AdModal from '@/components/ui/AdModal';
 
 interface GamePlayerClientProps {
   game: Game;
@@ -19,6 +20,7 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
   const [startTime, setStartTime] = useState<number>(0);
   const [isGamepadVisible, setIsGamepadVisible] = useState<boolean>(false);
   const [isMobileImmersive, setIsMobileImmersive] = useState<boolean>(false);
+  const [showAdModal, setShowAdModal] = useState<boolean>(true); // Show ad modal by default
   const supabase = createClient();
 
   const platform: 'GBA' | 'JAR' =
@@ -102,6 +104,8 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
   if (isMobileImmersive) {
     return (
       <div className="fixed inset-0 z-[99999] bg-black w-screen h-screen flex flex-col justify-between overflow-hidden select-none">
+        {showAdModal && <AdModal onClose={() => setShowAdModal(false)} />}
+        
         {/* Minimal Immersive Top Bar */}
         <div className="flex items-center justify-between px-3 py-1.5 bg-[#1a1a1a]/95 text-white z-50 border-b border-white/10 shrink-0 gap-2">
           <div className="flex items-center gap-2 shrink-0">
@@ -154,6 +158,8 @@ export default function GamePlayerClient({ game }: GamePlayerClientProps) {
 
   return (
     <div className="space-y-6">
+      {showAdModal && <AdModal onClose={() => setShowAdModal(false)} />}
+      
       {/* Emulator & Custom Controls Box */}
       <div className="cartoon-container bg-[#1a1a1a] p-3 sm:p-4 rounded-3xl shadow-[10px_10px_0px_#231f20] border-[3px] border-[#231f20] space-y-4">
         <EmulatorPlayer game={game} />

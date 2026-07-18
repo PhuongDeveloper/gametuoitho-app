@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import SideAdBanners from '@/components/layout/SideAdBanners';
+import GlobalAds from '@/components/layout/GlobalAds';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -38,13 +39,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="theme-color" content="#d63031" />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8385412892999149"
-          crossOrigin="anonymous"
-        ></script>
+        <meta name="theme-color" content="#d63031" />
       </head>
       <body id="top" className="antialiased min-h-screen flex flex-col justify-between">
+        <GlobalAds />
         <Header />
         <main className="flex-1 w-full">
           <SideAdBanners>{children}</SideAdBanners>
